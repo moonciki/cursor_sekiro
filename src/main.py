@@ -1,8 +1,7 @@
 """
-一个简单的桌面窗口应用程序，显示Hello World并检测Cursor编辑器状态。
+一个桌面窗口应用程序，用于管理和控制Cursor编辑器。
 
-This module creates a desktop window application that displays Hello World
-and checks Cursor editor status.
+This module creates a desktop window application that manages and controls the Cursor editor.
 """
 import tkinter as tk
 from tkinter import scrolledtext
@@ -68,9 +67,9 @@ class Logger:
         self.log("日志已清除")
 
 
-class HelloWorldApp:
+class CursorSekiroApp:
     """
-    一个显示Hello World的桌面窗口应用程序类。
+    一个用于管理Cursor编辑器的桌面窗口应用程序类。
     
     Attributes:
         root (tk.Tk): 主窗口实例
@@ -79,10 +78,10 @@ class HelloWorldApp:
     """
     
     def __init__(self) -> None:
-        """初始化HelloWorldApp类的新实例。"""
+        """初始化CursorSekiroApp类的新实例。"""
         self.root = tk.Tk()
-        self.root.title("Hello World 应用")
-        self.root.geometry("600x500")  # 增加窗口大小以适应日志区域
+        self.root.title("Cursor Sekiro")  # 更新窗口标题
+        self.root.geometry("600x500")
         
         # 设置窗口图标
         icon_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'resources', 'images', 'icon', 'icon.png')
@@ -467,7 +466,7 @@ class HelloWorldApp:
 
 def main() -> None:
     """程序入口点。"""
-    app = HelloWorldApp()
+    app = CursorSekiroApp()
     app.run()
 
 
