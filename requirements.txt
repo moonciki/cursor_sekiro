@@ -1,0 +1,24 @@
+# -*- coding: utf-8 -*-
+
+# GUI自动化
+pyautogui==0.9.54
+opencv-python>=4.8.0
+pywin32>=305
+
+# 系统进程管理
+psutil>=5.9.0
+
+# 基础依赖
+typing-extensions>=4.7.1
+
+# 其他可能用到的基础包
+python-dateutil==2.8.2
+
+# 其他可能用到的基础包
+pillow==10.0.0
+mouseinfo==0.1.3
+pygetwindow==0.0.9
+pymsgbox==1.0.9
+pyrect==0.2.0
+pyscreeze==0.1.29 
+

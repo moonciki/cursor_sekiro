@@ -1,0 +1,78 @@
+# Cursor 代码生成规则配置
+
+# 代码风格
+style:
+  # 缩进使用空格
+  indent_style: space
+  # 缩进大小为4个空格
+  indent_size: 4
+  # 最大行长度
+  max_line_length: 88
+  # 文件末尾需要空行
+  insert_final_newline: true
+
+# Java 相关规则
+java:
+  # 基础包路径
+  base_package: com.moonciki.cursorsekiro
+  # 类命名规范
+  class_naming: PascalCase
+  # 方法命名规范
+  method_naming: camelCase
+  # 变量命名规范
+  variable_naming: camelCase
+  # 常量命名规范
+  constant_naming: UPPER_SNAKE_CASE
+  # 要求类注释
+  require_class_javadoc: true
+  # 要求方法注释
+  require_method_javadoc: true
+
+# Python 相关规则
+python:
+  # Python版本
+  version: "3.11.9"
+  # 基础包路径
+  base_package: com.moonciki.cursorsekiro
+  # 遵循 PEP 8 规范
+  follow_pep8: true
+  # 导入排序
+  sort_imports: true
+  # 类型注解
+  type_hints: true
+  # 文档字符串格式
+  docstring_style: google
+
+# 注释规则
+comments:
+  # 要求函数必须有文档注释
+  require_function_docstring: true
+  # 要求类必须有文档注释
+  require_class_docstring: true
+  # 复杂逻辑需要添加注释
+  require_logic_comment: true
+
+# 命名规则
+naming:
+  # 变量使用小写字母加下划线
+  variable_style: snake_case
+  # 常量使用大写字母加下划线
+  constant_style: UPPER_CASE
+  # 类名使用大驼峰
+  class_style: PascalCase
+  # 函数名使用小写字母加下划线
+  function_style: snake_case
+
+# Git 相关
+git:
+  # 不生成在 .gitignore 中的文件
+  respect_gitignore: true
+  # 不修改 git 配置文件
+  protect_git_files: true
+
+# 安全规则
+security:
+  # 不生成包含敏感信息的代码
+  no_sensitive_data: true
+  # 使用安全的依赖版本
+  use_secure_dependencies: true 
