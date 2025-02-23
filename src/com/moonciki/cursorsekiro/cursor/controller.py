@@ -7,7 +7,7 @@ import psutil
 import shutil
 from typing import Optional
 from ..logger import Logger
-from ..utils.constants import CURSOR_EXE_PATH, CURSOR_AUTH_PATH
+from ..utils.constants import CursorConstants
 
 class CursorController:
     """
@@ -22,6 +22,8 @@ class CursorController:
             logger: 日志管理器实例
         """
         self.logger = logger
+        self.cursor_path = CursorConstants.CURSOR_EXE_PATH
+        self.auth_path = CursorConstants.CURSOR_AUTH_PATH
 
     @staticmethod
     def is_cursor_running() -> bool:
@@ -42,17 +44,11 @@ class CursorController:
     def launch_cursor(self) -> None:
         """启动Cursor编辑器。"""
         try:
-            startupinfo = subprocess.STARTUPINFO()
-            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-            startupinfo.wShowWindow = subprocess.SW_HIDE
-            
-            cmd = f'cmd /c start "" "{CURSOR_EXE_PATH}" 2>NUL'
-            subprocess.Popen(cmd,
-                           shell=True,
-                           startupinfo=startupinfo,
-                           stdout=subprocess.DEVNULL,
-                           stderr=subprocess.DEVNULL)
-            self.logger.log("正在启动Cursor编辑器", "INFO")
+            if not self.is_cursor_running():
+                os.startfile(CursorConstants.CURSOR_EXE_PATH)
+                self.logger.log("已启动Cursor", "INFO")
+            else:
+                self.logger.log("Cursor已在运行", "INFO")
         except Exception as e:
             self.logger.log(f"启动Cursor失败: {str(e)}", "ERROR")
 
@@ -68,7 +64,7 @@ class CursorController:
                     continue
             
             # 删除登录信息
-            auth_path = os.path.expandvars(CURSOR_AUTH_PATH)
+            auth_path = os.path.expandvars(CursorConstants.CURSOR_AUTH_PATH)
             if os.path.exists(auth_path):
                 shutil.rmtree(auth_path)
             

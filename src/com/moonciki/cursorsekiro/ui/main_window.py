@@ -9,7 +9,7 @@ from typing import Callable
 from ..logger import Logger
 from ..cursor.controller import CursorController
 from ..cursor.window import WindowController
-from ..utils.constants import SETTING_BUTTON_IMAGES, ICON_PATH
+from ..utils.constants import CursorConstants
 
 class MainWindow:
     """
@@ -43,8 +43,8 @@ class MainWindow:
         
         # 加载图标 - 静默处理错误
         try:
-            if os.path.exists(ICON_PATH):
-                icon = tk.PhotoImage(file=ICON_PATH)
+            if os.path.exists(CursorConstants.ICON_PATH):
+                icon = tk.PhotoImage(file=CursorConstants.ICON_PATH)
                 self.root.iconphoto(True, icon)
         except Exception:
             pass
@@ -159,7 +159,16 @@ class MainWindow:
 
     def _logout_cursor(self) -> None:
         """退出Cursor登录"""
-        self.cursor_controller.logout_cursor()
+        try:
+            # 先尝试通过UI点击登出
+            if self.window_controller.click_logout_button():
+                time.sleep(1)  # 等待登出操作完成
+            
+            # 无论UI操作是否成功,都执行强制登出
+            self.cursor_controller.logout_cursor()
+            
+        except Exception as e:
+            self.logger.log(f"登出操作失败: {str(e)}", "ERROR")
 
     def _clear_logs(self) -> None:
         """清除日志"""
@@ -185,9 +194,14 @@ class MainWindow:
                 self.window_controller.focus_cursor_window()
                 time.sleep(1)
                 
-                for image in SETTING_BUTTON_IMAGES:
-                    if self.window_controller.click_cursor_button(image):
-                        break
+                self.window_controller.click_cursor_setting()
+                time.sleep(1)
+                
+                self.window_controller.click_cursor_logout()
+                time.sleep(1)
+                
+                self.logger.log("打开设置成功", "INFO")
+                
                 
         except Exception as e:
             self.logger.log(f"打开设置失败: {str(e)}", "ERROR") 
