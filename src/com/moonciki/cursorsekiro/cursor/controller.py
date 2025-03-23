@@ -44,7 +44,7 @@ class CursorController:
         使用 WMI 查询 Cursor.exe 进程是否存在。
         """
         wmi = win32com.client.GetObject("winmgmts:")
-        processes = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'Cursor.exe'")
+        processes = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name = '" + CursorConstants.CURSOR_PROCESS_NAME + "'")
 
         runResult = (len(processes) > 0)
         Logger.info(f"进程数量： {runResult}");

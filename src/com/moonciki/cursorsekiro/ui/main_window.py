@@ -221,8 +221,23 @@ class MainWindow:
                 self.window_controller.click_cursor_setting()
                 time.sleep(1)
                 
-                self.window_controller.click_cursor_manager()
-                time.sleep(1)
+                manaResult = self.window_controller.click_cursor_manager()
+
+                if(not manaResult):
+                    Logger.warn("当前账号未登录")
+
+                    #点击 sign
+                    signResult = self.window_controller.click_cursor_sign()
+
+                else:
+                    Logger.info("Manage 成功")
+                
+                Logger.info("正在打开浏览器...")
+                time.sleep(5)
+
+
+
+
 
                 #self.window_controller.click_cursor_logout()
                 time.sleep(1)

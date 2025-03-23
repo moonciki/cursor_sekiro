@@ -3,6 +3,7 @@
 """
 import time
 import psutil
+import win32com.client
 import win32gui
 import win32process
 import win32con
@@ -32,37 +33,52 @@ class WindowController:
         pyautogui.FAILSAFE = True
         pyautogui.PAUSE = 0.5
 
+    @staticmethod
+    def get_pid_by_process_name(process_name: str):
+        """
+        根据进程名称获取 PID。
+
+        Args:
+            process_name (str): 进程名称（如 "Cursor.exe"）。
+
+        Returns:
+            list: 包含所有匹配进程的 PID 列表。
+        """
+        wmi = win32com.client.GetObject("winmgmts:")
+        processes = wmi.ExecQuery(f"SELECT * FROM Win32_Process WHERE Name = '{process_name}'")
+        pidText = [process.Properties_("ProcessID").Value for process in processes]
+        return pidText[0] if pidText else None  # 返回第一个PID，如果没有找到则返回None
+
     def focus_cursor_window(self) -> None:
         """聚焦Cursor窗口。"""
         try:
-            for proc in psutil.process_iter(['name', 'pid']):
-                try:
-                    if 'cursor' in proc.info['name'].lower():
-                        pid = proc.info['pid']
-                        
-                        def callback(hwnd, hwnds):
-                            if win32gui.IsWindowVisible(hwnd):
-                                _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
-                                if found_pid == pid:
-                                    hwnds.append(hwnd)
-                            return True
-                            
-                        hwnds = []
-                        win32gui.EnumWindows(callback, hwnds)
-                        
-                        if hwnds:
-                            hwnd = hwnds[0]
-                            if win32gui.IsIconic(hwnd):
-                                win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
-                            win32gui.SetForegroundWindow(hwnd)
-                            Logger.info("已成功聚焦Cursor窗口")
-                            return
-                            
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
-                    
-            Logger.error("未找到Cursor窗口")
+            pid = self.get_pid_by_process_name(CursorConstants.CURSOR_PROCESS_NAME)
+
+            # 判断是否找到 Cursor 进程
+            if not pid:
+                Logger.error("未找到 Cursor 进程")
+                return
             
+            Logger.info(f"找到 Cursor 进程，PID: {pid}")
+
+            def callback(hwnd, hwnds):
+                if win32gui.IsWindowVisible(hwnd):
+                    _, found_pid = win32process.GetWindowThreadProcessId(hwnd)
+                    if found_pid == pid:
+                        hwnds.append(hwnd)
+                return True
+            
+            hwnds = []
+            win32gui.EnumWindows(callback, hwnds)
+            
+            if hwnds:
+                hwnd = hwnds[0]
+                if win32gui.IsIconic(hwnd):
+                    win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+                win32gui.SetForegroundWindow(hwnd)
+                Logger.info("已成功聚焦Cursor窗口")
+                return
+        
         except Exception as e:
             Logger.error(f"聚焦Cursor窗口失败: {str(e)}")
 
@@ -131,8 +147,27 @@ class WindowController:
         
         self.capture_region_image(search_region)
 
-        return self.loop_click_button_once(search_region, *CursorConstants.LOGOUT_BUTTON_IMAGES)
+        return self.loop_click_button_once(search_region, *CursorConstants.MANAGE_BUTTON_IMAGES)
 
+
+    def click_cursor_sign(self) -> bool:
+        """点击Cursor sign按钮"""
+        window = gw.getActiveWindow()
+        if not window or 'cursor' not in window.title.lower():
+            Logger.warn("当前窗口不是Cursor")
+            return False
+            
+        # 登出按钮通常在整个窗口范围内
+        search_region = (
+            max(0, window.left),
+            max(0, window.top), 
+            max(0, window.width),
+            max(0, window.height)
+        )
+        
+        self.capture_region_image(search_region)
+
+        return self.loop_click_button_once(search_region, *CursorConstants.SIGN_BUTTON_IMAGES)
 
     def click_cursor_logout(self) -> bool:
         """点击Cursor登出按钮"""

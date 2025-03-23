@@ -16,6 +16,8 @@ class CursorConstants:
     # 图标路径
     ICON_PATH = os.path.join(RESOURCES_DIR, 'icon', 'icon.png')
 
+    CURSOR_PROCESS_NAME = "Cursor.exe"
+
     # 按钮图片名称
     SETTING_BUTTON_IMAGES = [
         "button/setting-button-light.png",
@@ -26,6 +28,13 @@ class CursorConstants:
     MANAGE_BUTTON_IMAGES = [
         "button/manage-button-light.png",
         "button/manage-button-dark.png"
+    ]
+
+
+    # 登录按钮图片名称
+    SIGN_BUTTON_IMAGES = [
+        "button/sign-button-light.png",
+        "button/sign-button-dark.png"
     ]
 
 
