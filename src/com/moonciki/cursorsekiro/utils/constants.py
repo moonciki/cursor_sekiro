@@ -22,6 +22,13 @@ class CursorConstants:
         "button/setting-button-dark.png"
     ]
 
+    # manage按钮图片名称
+    MANAGE_BUTTON_IMAGES = [
+        "button/manage-button-light.png",
+        "button/manage-button-dark.png"
+    ]
+
+
     # 登出按钮图片名称
     LOGOUT_BUTTON_IMAGES = [
         "button/logout-button-light.png",

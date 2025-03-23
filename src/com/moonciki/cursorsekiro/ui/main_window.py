@@ -6,10 +6,10 @@ from tkinter import scrolledtext, messagebox
 import os
 import time
 from typing import Callable
-from ..logger import Logger
-from ..cursor.controller import CursorController
-from ..cursor.window import WindowController
-from ..utils.constants import CursorConstants
+from com.moonciki.cursorsekiro.logger import Logger
+from com.moonciki.cursorsekiro.cursor.controller import CursorController
+from com.moonciki.cursorsekiro.cursor.window import WindowController
+from com.moonciki.cursorsekiro.utils.constants import CursorConstants
 
 class MainWindow:
     """
@@ -81,8 +81,8 @@ class MainWindow:
         self._create_log_area()
         
         # 初始化控制器
-        self.cursor_controller = CursorController(self.logger)
-        self.window_controller = WindowController(self.logger)
+        self.cursor_controller = CursorController()
+        self.window_controller = WindowController()
 
     def _create_buttons(self, parent: tk.Frame) -> None:
         """创建按钮区域"""
@@ -144,14 +144,14 @@ class MainWindow:
         
         # 在这里显示日志组件
         self.log_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        self.logger.log("应用程序启动")
+        Logger.info("应用程序启动")
 
     def _check_cursor_status(self) -> None:
         """检查Cursor状态"""
         is_running = self.cursor_controller.is_cursor_running()
         status_text = "Cursor编辑器正在运行" if is_running else "Cursor编辑器未运行"
         self.status_label.config(text=status_text)
-        self.logger.log(f"检查Cursor状态: {status_text}")
+        Logger.info(f"检查Cursor状态: {status_text}")
 
     def _launch_cursor(self) -> None:
         """启动Cursor"""
@@ -168,11 +168,11 @@ class MainWindow:
             self.cursor_controller.logout_cursor()
             
         except Exception as e:
-            self.logger.log(f"登出操作失败: {str(e)}", "ERROR")
+            Logger.error(f"登出操作失败: {str(e)}")
 
     def _clear_logs(self) -> None:
         """清除日志"""
-        self.logger.clear()
+        Logger.clear()
 
     def _open_cursor_settings(self) -> None:
         """打开Cursor设置"""
@@ -184,12 +184,14 @@ class MainWindow:
             )
             
             if result == 'ok':
-                self.logger.log("开始打开Cursor设置流程", "INFO")
+                Logger.info("开始打开Cursor设置流程")
                 
                 if not self.cursor_controller.is_cursor_running():
-                    self.logger.log("Cursor未运行，正在启动...", "INFO")
+                    Logger.info("Cursor未运行，正在启动...")
                     self.cursor_controller.launch_cursor()
                     time.sleep(5)
+                else:
+                    Logger.info("Cursor已运行 ...")
                 
                 self.window_controller.focus_cursor_window()
                 time.sleep(1)
@@ -197,11 +199,13 @@ class MainWindow:
                 self.window_controller.click_cursor_setting()
                 time.sleep(1)
                 
-                self.window_controller.click_cursor_logout()
+                self.window_controller.click_cursor_manager()
+                time.sleep(1)
+
+                #self.window_controller.click_cursor_logout()
                 time.sleep(1)
                 
-                self.logger.log("打开设置成功", "INFO")
-                
+                Logger.info("打开设置成功")
                 
         except Exception as e:
-            self.logger.log(f"打开设置失败: {str(e)}", "ERROR") 
+            Logger.error(f"打开设置失败: {str(e)}") 

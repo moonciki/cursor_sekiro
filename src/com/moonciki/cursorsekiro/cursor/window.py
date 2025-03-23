@@ -24,14 +24,10 @@ class WindowController:
     窗口控制器类。
     """
     
-    def __init__(self, logger: Logger):
+    def __init__(self):
         """
         初始化窗口控制器。
-
-        Args:
-            logger: 日志管理器实例
         """
-        self.logger = logger
         # 设置pyautogui的安全设置
         pyautogui.FAILSAFE = True
         pyautogui.PAUSE = 0.5
@@ -59,16 +55,16 @@ class WindowController:
                             if win32gui.IsIconic(hwnd):
                                 win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
                             win32gui.SetForegroundWindow(hwnd)
-                            self.logger.log("已成功聚焦Cursor窗口", "INFO")
+                            Logger.info("已成功聚焦Cursor窗口")
                             return
                             
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     continue
                     
-            self.logger.log("未找到Cursor窗口", "ERROR")
+            Logger.error("未找到Cursor窗口")
             
         except Exception as e:
-            self.logger.log(f"聚焦Cursor窗口失败: {str(e)}", "ERROR")
+            Logger.error(f"聚焦Cursor窗口失败: {str(e)}")
 
     def capture_region_image(self, search_region: Tuple[int, int, int, int]) -> bool:
         """
@@ -93,18 +89,18 @@ class WindowController:
             screenshot = pyautogui.screenshot(region=search_region)
             screenshot.save(screenshot_path)
             
-            self.logger.log(f"区域截图已保存至: {screenshot_path}", "INFO")
+            Logger.info(f"区域截图已保存至: {screenshot_path}")
             return True
             
         except Exception as e:
-            self.logger.log(f"区域截图失败: {str(e)}", "ERROR")
+            Logger.error(f"区域截图失败: {str(e)}")
             return False
 
     def click_cursor_setting(self) -> bool:
         """点击Cursor设置按钮"""
         window = gw.getActiveWindow()
         if not window or 'cursor' not in window.title.lower():
-            self.logger.log("当前窗口不是Cursor", "WARNING")
+            Logger.warn("当前窗口不是Cursor")
             return False
         
         # 设置按钮通常在右上角
@@ -117,11 +113,32 @@ class WindowController:
         
         return self.loop_click_button_once(search_region, *CursorConstants.SETTING_BUTTON_IMAGES)
 
+
+    def click_cursor_manager(self) -> bool:
+        """点击Cursor manager按钮"""
+        window = gw.getActiveWindow()
+        if not window or 'cursor' not in window.title.lower():
+            Logger.warn("当前窗口不是Cursor")
+            return False
+            
+        # 登出按钮通常在整个窗口范围内
+        search_region = (
+            max(0, window.left),
+            max(0, window.top), 
+            max(0, window.width),
+            max(0, window.height)
+        )
+        
+        self.capture_region_image(search_region)
+
+        return self.loop_click_button_once(search_region, *CursorConstants.LOGOUT_BUTTON_IMAGES)
+
+
     def click_cursor_logout(self) -> bool:
         """点击Cursor登出按钮"""
         window = gw.getActiveWindow()
         if not window or 'cursor' not in window.title.lower():
-            self.logger.log("当前窗口不是Cursor", "WARNING")
+            Logger.warn("当前窗口不是Cursor")
             return False
             
         # 登出按钮通常在整个窗口范围内
@@ -151,12 +168,12 @@ class WindowController:
             button_image_path = os.path.join(CursorConstants.RESOURCES_DIR, button_image_name)
             
             if not os.path.exists(button_image_path):
-                self.logger.log(f"按钮图片不存在: {button_image_path}", "ERROR")
+                Logger.error(f"按钮图片不存在: {button_image_path}")
                 return False
                 
             window = gw.getActiveWindow()
             if not window or 'cursor' not in window.title.lower():
-                self.logger.log("当前窗口不是Cursor", "WARNING")
+                Logger.warn("当前窗口不是Cursor")
                 return False
 
             try:
@@ -172,7 +189,7 @@ class WindowController:
                         window.top <= button_center.y <= window.bottom):
                         pyautogui.moveTo(button_center.x, button_center.y)
                         pyautogui.click()
-                        self.logger.log("成功点击按钮", "INFO")
+                        Logger.info("成功点击按钮")
                         return True
                 
                 return False
@@ -183,11 +200,11 @@ class WindowController:
                 print(f"异常信息: {str(e)}")
                 print("异常堆栈:")
                 print(traceback.format_exc())
-                self.logger.log(f"查找按钮失败: {str(e)}", "WARNING")
+                Logger.warn(f"查找按钮失败: {str(e)}")
                 return False
             
         except Exception as e:
-            self.logger.log(f"点击按钮失败: {str(e)}", "ERROR")
+            Logger.error(f"点击按钮失败: {str(e)}")
             return False
 
     def loop_click_button_once(self, search_region: Tuple[int, int, int, int], *button_images: str) -> bool:

@@ -4,6 +4,7 @@ Cursor控制器模块,处理Cursor编辑器的核心操作。
 import os
 import subprocess
 import psutil
+import win32com.client
 import shutil
 from typing import Optional
 from ..logger import Logger
@@ -11,22 +12,18 @@ from ..utils.constants import CursorConstants
 
 class CursorController:
     """
-    Cursor编辑器控制器类。
+    Cursor控制器类。
     """
     
-    def __init__(self, logger: Logger):
+    def __init__(self):
         """
         初始化Cursor控制器。
-
-        Args:
-            logger: 日志管理器实例
         """
-        self.logger = logger
         self.cursor_path = CursorConstants.CURSOR_EXE_PATH
         self.auth_path = CursorConstants.CURSOR_AUTH_PATH
 
     @staticmethod
-    def is_cursor_running() -> bool:
+    def is_cursor_running1() -> bool:
         """
         检查Cursor编辑器是否正在运行。
 
@@ -41,16 +38,30 @@ class CursorController:
                 continue
         return False
 
+    @staticmethod
+    def is_cursor_running() -> bool:
+        """
+        使用 WMI 查询 Cursor.exe 进程是否存在。
+        """
+        wmi = win32com.client.GetObject("winmgmts:")
+        processes = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name = 'Cursor.exe'")
+
+        runResult = (len(processes) > 0)
+        Logger.info(f"进程数量： {runResult}");
+
+        return runResult
+
+
     def launch_cursor(self) -> None:
         """启动Cursor编辑器。"""
         try:
             if not self.is_cursor_running():
                 os.startfile(CursorConstants.CURSOR_EXE_PATH)
-                self.logger.log("已启动Cursor", "INFO")
+                Logger.info("已启动Cursor")
             else:
-                self.logger.log("Cursor已在运行", "INFO")
+                Logger.info("Cursor已在运行")
         except Exception as e:
-            self.logger.log(f"启动Cursor失败: {str(e)}", "ERROR")
+            Logger.error(f"启动Cursor失败: {str(e)}")
 
     def logout_cursor(self) -> None:
         """退出Cursor的登录状态。"""
@@ -68,6 +79,6 @@ class CursorController:
             if os.path.exists(auth_path):
                 shutil.rmtree(auth_path)
             
-            self.logger.log("已退出Cursor登录", "INFO")
+            Logger.info("已退出Cursor登录")
         except Exception as e:
-            self.logger.log(f"退出Cursor登录失败: {str(e)}", "ERROR") 
+            Logger.error(f"退出Cursor登录失败: {str(e)}") 
