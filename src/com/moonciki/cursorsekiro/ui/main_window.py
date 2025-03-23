@@ -177,6 +177,13 @@ class MainWindow:
     def _open_cursor_settings(self) -> None:
         """打开Cursor设置"""
         try:
+            # 首先检查 Cursor.exe 是否存在
+            if not os.path.exists(CursorConstants.CURSOR_EXE_PATH):
+                error_msg = f"未找到Cursor程序，请确认Cursor已正确安装。\n期望路径: {CursorConstants.CURSOR_EXE_PATH}"
+                Logger.error(error_msg)
+                messagebox.showerror("错误", error_msg)
+                return
+                
             result = messagebox.showwarning(
                 "操作提示",
                 "激活过程中，请勿操作电脑",
@@ -189,7 +196,22 @@ class MainWindow:
                 if not self.cursor_controller.is_cursor_running():
                     Logger.info("Cursor未运行，正在启动...")
                     self.cursor_controller.launch_cursor()
-                    time.sleep(5)
+
+                    # 循环检查Cursor是否运行,最多等待30秒
+                    wait_time = 0
+                    while not self.cursor_controller.is_cursor_running():
+                        time.sleep(3)
+                        wait_time += 1
+                        Logger.info(f"等待Cursor启动... {wait_time}秒")
+                        if wait_time >= 30:
+                            error_msg = "等待Cursor启动超时"
+                            Logger.error(error_msg)
+                            messagebox.showerror("错误", error_msg)
+                            return
+                    Logger.info("等待 Cursor 启动 。。。 ")
+                    time.sleep(10)
+                    Logger.info("Cursor已成功启动 ！")
+
                 else:
                     Logger.info("Cursor已运行 ...")
                 
