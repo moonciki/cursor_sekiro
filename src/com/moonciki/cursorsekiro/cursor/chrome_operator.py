@@ -3,6 +3,7 @@
 """
 import time
 import psutil
+import pyperclip
 import win32com.client
 import win32gui
 import win32process
@@ -13,10 +14,12 @@ import os
 from typing import Optional, Tuple
 
 from com.moonciki.cursorsekiro.utils import WindowTools
+from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
 from ..logger import Logger
 from ..utils.constants import CursorConstants
 from ..utils.WindowTools import WindowTools
 
+from tkinter import messagebox
 import tkinter as tk
 from PIL import Image
 import logging
@@ -45,13 +48,23 @@ class ChromeOperator:
         wait_time = 0
         while wait_time < 15:
             active_window = gw.getActiveWindow()
-            if active_window and 'chrome' in active_window.title.lower():
+
+            current_title = active_window.title.lower()
+
+            Logger.info(f"windows title : {current_title}")
+
+            if active_window and 'google chrome' in current_title:
                 Logger.info("Chrome浏览器已打开")
 
                 # 检查窗口是否已经最大化，如果没有则最大化
                 if not active_window.isMaximized:
                     active_window.maximize()
                     Logger.info("Chrome浏览器已最大化")
+
+                    #按 ctrl + 0 恢复缩放等级
+                    pyautogui.hotkey('ctrl', '0')
+                    Logger.info("已恢复Chrome浏览器默认缩放等级")
+
                     time.sleep(0.5)  # 等待最大化完成
                 else:
                     Logger.info("Chrome浏览器已经处于最大化状态")
@@ -76,7 +89,7 @@ class ChromeOperator:
         try:
             # 确保Chrome浏览器处于活动状态
             active_window = gw.getActiveWindow()
-            if not active_window or 'chrome' not in active_window.title.lower():
+            if not active_window or 'google chrome' not in active_window.title.lower():
                 Logger.error("未找到Chrome浏览器窗口")
                 return ""
             
@@ -128,7 +141,7 @@ class ChromeOperator:
             # 清空地址栏并输入新URL
             pyautogui.hotkey('ctrl', 'a')
             time.sleep(0.3)
-            pyautogui.write(url)
+            WindowTools.paste_text(url)
             time.sleep(0.3)
             
             # 按回车键导航到URL
@@ -143,7 +156,60 @@ class ChromeOperator:
             return ""
 
 
-    def login_cursor(self, username: str) -> bool:
+    def send_login_code(self) -> bool:
+        """
+        发送登录验证码
+        """
+        
+        window = gw.getActiveWindow()
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            window.width,
+            window.height
+        )
+
+        clickResult = WindowTools.loop_click_button_multi(search_region, *CursorConstants.CHROME_BTN_EMAIL_CODE_IMAGE, 5)
+        
+        if(not clickResult):
+            Logger.warn("登录按钮点击失败")
+            raise Exception("登录按钮点击失败")
+
+        Logger.info("发送登录验证码点击成功")
+
+        # 定位到输入框（通常登录页面的输入框是页面中唯一或第一个输入框）
+        window = gw.getActiveWindow()
+        
+        
+        wait_time = 0
+        while wait_time < 5:
+
+            clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_ROBOT_CHECK_IMAGE)
+
+            if(not clickResult):
+                Logger.warn("机器人校验没看到")
+
+                clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_PAGE_ENTER_CODE)
+        
+                if(not clickResult):
+                    Logger.warn("也不是输入验证码页面")
+                else:
+                    time.sleep(0.5)
+                    pyautogui.press('tab')
+                    Logger.info("输入验证码页面")
+                    break
+            
+            wait_time += 1
+            Logger.info(f"尝试发送登录验证码 ... {wait_time}秒")
+            time.sleep(2)
+        else:
+            error_msg = "尝试发送登录验证码超时"
+            Logger.error(error_msg)
+            raise Exception(error_msg)
+
+
+
+    def login_cursor(self) -> bool:
         """
         在Cursor登录页面输入用户名和密码并登录
         
@@ -156,58 +222,185 @@ class ChromeOperator:
         """
         
         # 定位到输入框（通常登录页面的输入框是页面中唯一或第一个输入框）
-        # 点击页面中心位置，确保页面获得焦点
-        screen_width, screen_height = pyautogui.size()
-        pyautogui.click(screen_width // 2, screen_height // 2)
+        window = gw.getActiveWindow()
+
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            window.width,
+            window.height
+        )
+        
+        clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_SIGN_BLUR_IMAGES)
+        if(not clickResult):
+            raise Exception("登录页面解析失败!")
+
         time.sleep(0.5)
-        
-        # 检查鼠标是否已经变为光标形状（表示已经在输入框中）
-        current_cursor = pyautogui.position()
-        cursor_shape = pyautogui.screenshot().getpixel((current_cursor.x, current_cursor.y))
-        
-        # 如果鼠标不是光标形状（不在输入框中），则使用Tab键定位到输入框
-        if cursor_shape != (0, 0, 0):  # 简单判断，实际可能需要更复杂的逻辑
-            Logger.info("鼠标未在输入框中，使用Tab键定位")
-            pyautogui.press('tab')
-            time.sleep(0.3)
-        else:
-            Logger.info("鼠标已在输入框中，无需再定位")
+        pyautogui.press('tab')
+        time.sleep(0.3)
         
         # 输入用户名
-        pyautogui.write(username)
+        email = EmailConstants.get_email()
+        if email:
+            WindowTools.paste_text(email)
+        else:
+            # 如果没有配置邮箱，则抛出异常并弹出提示
+            error_msg = "未配置邮箱信息，请先在设置中配置邮箱"
+            Logger.error(error_msg)
+            messagebox.showerror("错误", error_msg)
+            raise Exception("未配置邮箱信息")
+        
         time.sleep(0.5)
         
         # 按回车键提交表单
         pyautogui.press('enter')
         time.sleep(3)  # 等待登录过程
-        
-        Logger.info(f"已尝试登录Cursor账号: {username}")
+    
+        #发送登录验证码
+        self.send_login_code()
+
+
+
+
+
+        Logger.info(f"已尝试登录Cursor账号")
         return True
 
 
 
-    def open_setting_page(self) -> bool:
+    def _cursor_setting_page(self) -> bool:
         """判断是否是 Settings 页面"""
         
         currentUrl = self.get_location_url()
         
-        # 判断当前URL是否是设置页面或登录页面
-        is_settings_page = currentUrl.startswith(CursorConstants.SURSOR_SETTINGS_URL)
+        
+
+        is_setting_page = currentUrl.startswith(CursorConstants.SURSOR_SETTINGS_URL)
         is_sign_page = currentUrl.startswith(CursorConstants.SURSOR_SIGN_URL)
         
-        if is_settings_page:
+        if is_setting_page:
             Logger.info("当前页面是Cursor设置页面")
 
-            return True
+
+            Logger.info("检查settings 页面加载 。。。 ")
+            window = gw.getActiveWindow()
+            # 判断当前URL是否是设置页面或登录页面
+            search_region = (
+                max(0, window.left),
+                max(0, window.top), 
+                max(0, window.width),
+                max(0, window.height)
+            )
+            settingResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_SETTING_PAGE_IMG)
+
+            return settingResult
 
         elif is_sign_page:
             Logger.info("当前页面是Cursor登录页面")
+            self.login_cursor()
 
-
+            return False
         else:
-            Logger.warn(f"chrome 打开失败 : Cursor open error .")
-            # 抛出异常，表示打开设置页面失败
-            raise Exception(f"打开Cursor设置页面失败，当前URL: {currentUrl}")
-        return False
+            Logger.warn(f"既不是登录，也不是 Settings .")
+            self.turn_location(CursorConstants.SURSOR_SETTINGS_URL)
+            return False
 
+
+    def do_cursor_login(self) -> bool:
+        """判断是否是 login 页面"""
         
+        currentUrl = self.get_location_url()
+        
+        # 判断当前URL是否是登录页面
+        is_sign_page = currentUrl.startswith(CursorConstants.SURSOR_SIGN_URL)
+        
+        if not is_sign_page:
+
+            self.turn_location(CursorConstants.SURSOR_SIGN_URL)
+
+            time.sleep(2)
+
+        self.login_cursor()
+        return True
+
+    def delete_cursor_account(self):
+        """删除Cursor账号"""
+
+        window = gw.getActiveWindow()
+         
+        # 登出按钮通常在整个窗口范围内
+        search_region = (
+            max(0, window.left),
+            max(0, window.top), 
+            max(0, window.width),
+            max(0, window.height)
+        )
+        
+        btnAdvanceDelete = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_ADVANCE_DELETE_IMAGE)
+
+        if(not btnAdvanceDelete):
+            btnAdvanceDelete = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_ADVANCE_IMAGE)
+
+            if(not btnAdvanceDelete):
+                Logger.warn("高级按钮点击失败")
+                raise Exception("高级按钮点击失败")
+
+            time.sleep(0.5)
+            
+            btnAdvanceDelete = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_ADVANCE_DELETE_IMAGE)
+
+            if(not btnAdvanceDelete):
+                Logger.warn("删除按钮点击失败")
+                raise Exception("删除账号失败")
+
+        time.sleep(0.5)
+        
+        inputResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_INPUT_CONFIRM_IMAGE)
+
+        if(not inputResult):
+            Logger.warn("确认输入框点击失败")
+            raise Exception("确认输入框点击失败")
+
+        WindowTools.paste_text("delete")
+        time.sleep(0.3)
+        deleteResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_DELETE_CONFIRM)
+
+        if(not deleteResult):
+            Logger.warn("账号确认删除失败")
+            raise Exception("账号确认删除失败")
+
+        time.sleep(2)
+        
+        Logger.info("账号删除成功")
+
+
+
+
+
+
+
+
+
+
+
+
+    def loop_check_setting(self):
+        wait_time = 0
+        while wait_time < 5:
+
+            openSult = self._cursor_setting_page()
+
+            # 检查窗口是否已经最大化，如果没有则最大化
+            if openSult:
+                Logger.info("Cursor 设置页面打开成功 ... ")
+                break;
+            else:
+                wait_time += 1
+                Logger.info(f"等待Cursor setting page ... {wait_time}秒")
+                time.sleep(2)
+        else:
+            error_msg = "Cursor setting page打开超时"
+            Logger.error(error_msg)
+            raise Exception(error_msg)
+    
+    

@@ -6,6 +6,7 @@ import subprocess
 import time
 import psutil
 import pyautogui
+import pyperclip
 import win32com.client
 import shutil
 from typing import Optional, Tuple
@@ -121,6 +122,21 @@ class WindowTools:
             Logger.error(f"区域截图失败: {str(e)}")
             return False
 
+    @staticmethod
+    def paste_text(text: str):
+        """
+        粘贴文字到当前活动窗口
+        
+        Args:
+            text: 要粘贴的文字
+        """
+        # 使用剪贴板方式输入，避免输入法问题
+        pyperclip.copy(text)  # 复制文字到剪贴板
+        time.sleep(0.3)
+        pyautogui.hotkey('ctrl', 'v')  # 粘贴
+        time.sleep(0.3)
+
+
 
     @staticmethod
     def loop_click_button_once(search_region: Tuple[int, int, int, int], *button_images: str) -> bool:
@@ -138,6 +154,32 @@ class WindowTools:
             if WindowTools._click_single_button(image, search_region):
                 return True
         return False 
+    
+    @staticmethod
+    def loop_click_button_multi(search_region: Tuple[int, int, int, int], *button_images: str, tryCount: int) -> bool:
+        """
+        尝试多次点击多个按钮图片中的任意一个，直到尝试次数用完或成功点击。
+
+        Args:
+            search_region: 搜索区域的坐标 (left, top, width, height)
+            button_images: 要查找的按钮图片路径列表
+            tryCount: 尝试点击的最大次数
+
+        Returns:
+            bool: 是否成功点击了任意一个按钮
+        """
+        for attempt in range(tryCount):
+            Logger.info(f"尝试点击按钮，第 {attempt+1}/{tryCount} 次")
+            
+            
+            if WindowTools.loop_click_button_once(search_region, *button_images):
+                Logger.info(f"成功点击按钮，尝试次数: {attempt+1}")
+                return True
+
+            time.sleep(1)  # 每次尝试之间稍作等待
+            
+        Logger.info(f"尝试 {tryCount} 次后未能成功点击任何按钮")
+        return False
 
 
 
@@ -161,10 +203,7 @@ class WindowTools:
                 return False
                 
             window = gw.getActiveWindow()
-            if not window or 'cursor' not in window.title.lower():
-                Logger.warn("当前窗口不是Cursor")
-                return False
-
+            
             try:
                 button_location = pyautogui.locateOnScreen(
                     button_image_path,
@@ -178,7 +217,6 @@ class WindowTools:
                         window.top <= button_center.y <= window.bottom):
                         pyautogui.moveTo(button_center.x, button_center.y)
                         pyautogui.click()
-                        Logger.info("成功点击按钮")
                         return True
                 
                 return False

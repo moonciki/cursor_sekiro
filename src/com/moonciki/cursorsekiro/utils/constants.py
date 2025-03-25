@@ -44,6 +44,45 @@ class CursorConstants:
         "button/logout-button-dark.png"
     ]
 
+    # 登录页面，点击其他位置，使输入框失去焦点
+    CHROME_SIGN_BLUR_IMAGES = [
+        "button/chrome-sign-blur.png"
+    ]
+    # 设置页面标识
+    CHROME_SETTING_PAGE_IMG = [
+        "button/chrome-setting-page.png"
+    ]
+    # 高级按钮
+    CHROME_ADVANCE_IMAGE = [
+        "button/chrome-advance-button.png"
+    ]
+    # 删除按钮
+    CHROME_ADVANCE_DELETE_IMAGE = [
+        "button/chrome-del-button.png"
+    ]
+    # 确认输入框
+    CHROME_INPUT_CONFIRM_IMAGE = [
+        "button/chrome-input-confirm.png"
+    ]
+    # 确认删除按钮
+    CHROME_BTN_DELETE_CONFIRM = [
+        "button/chrome-btn-delete-confirm.png"
+    ]
+
+    # 发送登录验证码
+    CHROME_BTN_EMAIL_CODE_IMAGE = [
+        "button/chrome-btn-email-code.png"
+    ]
+
+    # 发送登录验证码机器人校验
+    CHROME_BTN_ROBOT_CHECK_IMAGE = [
+        "button/chrome-btn-robot-check.png"
+    ]
+    # 发送登录验证码机器人校验
+    CHROME_PAGE_ENTER_CODE = [
+        "button/chrome-page-enter-code.png"
+    ]
+
     # Cursor可执行文件路径
     CURSOR_EXE_PATH = os.path.expandvars(
         r"%LOCALAPPDATA%\Programs\Cursor\Cursor.exe"

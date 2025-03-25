@@ -2,15 +2,17 @@
 主窗口UI模块。
 """
 import tkinter as tk
-from tkinter import scrolledtext, messagebox
+from tkinter import scrolledtext, messagebox, Entry
 import os
 import time
-from typing import Callable
+import json
+from typing import Callable, Dict, Any
 from com.moonciki.cursorsekiro.cursor.chrome_operator import ChromeOperator
 from com.moonciki.cursorsekiro.logger import Logger
 from com.moonciki.cursorsekiro.cursor.controller import CursorController
 from com.moonciki.cursorsekiro.cursor.window import WindowController
 from com.moonciki.cursorsekiro.utils.constants import CursorConstants
+from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
 
 class MainWindow:
     """
@@ -34,6 +36,10 @@ class MainWindow:
         self.window_controller = None
         self.chromeOperator = None
         
+        # 邮箱相关属性
+        self.email_prefix = tk.StringVar()
+        self.email_password = tk.StringVar()
+        
         # 创建日志组件但不立即显示
         self.log_widget = scrolledtext.ScrolledText(
             self.root,
@@ -51,6 +57,9 @@ class MainWindow:
         except Exception:
             pass
         
+        # 加载邮箱配置
+        self._load_email_config()
+        
         # 设置UI
         self._setup_ui()
         
@@ -60,13 +69,28 @@ class MainWindow:
         top_frame = tk.Frame(self.root)
         top_frame.pack(fill=tk.X, padx=10, pady=5)
         
+        # 创建邮箱设置区域
+        self._create_email_settings(top_frame)
+        
         # 创建主标签
-        main_label = tk.Label(
+        config_status = "邮箱配置已保存" if EmailConstants.is_config_saved() else "邮箱配置未保存"
+        status_color = "green" if EmailConstants.is_config_saved() else "red"
+        self.main_label = tk.Label(
             top_frame,
-            text="Hello World!",
-            font=("Arial", 24)
+            text=config_status,
+            font=("Arial", 24),
+            fg=status_color
         )
-        main_label.pack(expand=True, pady=10)
+        self.main_label.pack(expand=True, pady=10)
+        
+        # 添加安全提示
+        security_note = tk.Label(
+            top_frame,
+            text="(注：您的账户与密码均不会上传，但为了安全考虑，请不要使用常用邮箱)",
+            font=("Arial", 9),
+            fg="red"
+        )
+        security_note.pack(pady=(0, 5))
         
         # 创建状态标签
         self.status_label = tk.Label(
@@ -86,6 +110,102 @@ class MainWindow:
         self.cursor_controller = CursorController()
         self.window_controller = WindowController()
         self.chromeOperator = ChromeOperator()
+
+    def _create_email_settings(self, parent: tk.Frame) -> None:
+        """创建邮箱设置区域"""
+        email_frame = tk.Frame(parent)
+        email_frame.pack(fill=tk.X, pady=5)
+        
+        # 邮箱前缀输入框
+        email_prefix_frame = tk.Frame(email_frame)
+        email_prefix_frame.pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(
+            email_prefix_frame,
+            text="邮箱:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        email_prefix_entry = Entry(
+            email_prefix_frame,
+            textvariable=self.email_prefix,
+            width=15,
+            font=("Arial", 10)
+        )
+        email_prefix_entry.pack(side=tk.LEFT)
+        
+        tk.Label(
+            email_prefix_frame,
+            text="@outlook.com",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        # 邮箱密码输入框
+        password_frame = tk.Frame(email_frame)
+        password_frame.pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(
+            password_frame,
+            text="密码:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT)
+        
+        password_entry = Entry(
+            password_frame,
+            textvariable=self.email_password,
+            width=15,
+            font=("Arial", 10),
+            show="*"
+        )
+        password_entry.pack(side=tk.LEFT)
+        
+        # 保存按钮
+        self.save_button = tk.Button(
+            email_frame,
+            text="保存",
+            command=self._save_email_config,
+            font=("Arial", 10)
+        )
+        self.save_button.pack(side=tk.LEFT, padx=5)
+
+    def _is_email_saved(self) -> bool:
+        """检查是否已保存邮箱配置"""
+        return EmailConstants.is_config_saved()
+
+    def _load_email_config(self) -> None:
+        """加载邮箱配置"""
+        try:
+            self.email_prefix.set(EmailConstants.get_email_prefix())
+            self.email_password.set(EmailConstants.get_email_password())
+            if EmailConstants.is_config_saved():
+                Logger.info("邮箱配置已加载")
+        except Exception as e:
+            Logger.error(f"加载邮箱配置失败: {str(e)}")
+
+    def _save_email_config(self) -> None:
+        """保存邮箱配置"""
+        try:
+            # 保存配置
+            EmailConstants.save_config(
+                self.email_prefix.get(),
+                self.email_password.get()
+            )
+            
+            # 检查保存后的状态
+            is_saved = EmailConstants.is_config_saved()
+            
+            # 根据状态更新主标签
+            if is_saved:
+                self.main_label.config(text="邮箱配置已保存", fg="green")
+                message = "邮箱配置已保存"
+            else:
+                self.main_label.config(text="邮箱配置未保存", fg="red")
+                message = "邮箱配置已保存，但邮箱或密码为空"
+            
+            messagebox.showinfo("提示", message)
+        except Exception as e:
+            Logger.error(f"保存邮箱配置失败: {str(e)}")
+            messagebox.showerror("错误", f"保存邮箱配置失败: {str(e)}")
 
     def _create_buttons(self, parent: tk.Frame) -> None:
         """创建按钮区域"""
@@ -232,6 +352,7 @@ class MainWindow:
                     #点击 sign
                     signResult = self.window_controller.click_cursor_sign()
 
+                    time.sleep(4)
                     if (not signResult):
                         Logger.warn("打开浏览器失败...")
                         return;
@@ -240,21 +361,28 @@ class MainWindow:
                     Logger.info("Manage 成功")
                 
                 Logger.info("正在打开浏览器...")
-                time.sleep(5)
+                time.sleep(1)
 
                 #循环判断是否有chrome 
-                self.chromeOperator.check_chrome_open();
+                self.chromeOperator.check_chrome_open()
                 
                 Logger.info("chrome 浏览器打开完毕...")
                 time.sleep(1)
 
-                self.chromeOperator.check_chrome_open();
+                self.chromeOperator.loop_check_setting()
 
-
-                #self.window_controller.click_cursor_logout()
                 time.sleep(1)
                 
-                Logger.info("打开设置成功")
+                # 删除账号
+                self.chromeOperator.delete_cursor_account()
+                time.sleep(1)
+
+                # 登录
+                self.chromeOperator.do_cursor_login()
+                time.sleep(1)
+
+
+
                 
         except Exception as e:
             Logger.error("打开设置失败: ", e)

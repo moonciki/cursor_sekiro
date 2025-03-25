@@ -36,3 +36,5 @@ ENV/
 Thumbs.db 
 
 tmp
+
+src/config/*.json
