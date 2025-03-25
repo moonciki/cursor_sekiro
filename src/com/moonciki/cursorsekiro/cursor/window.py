@@ -37,9 +37,8 @@ class WindowController:
         pyautogui.FAILSAFE = True
         pyautogui.PAUSE = 0.5
 
-    def focus_cursor_window() -> None:
+    def focus_cursor_window(self):
         """聚焦Cursor窗口。"""
-
         pid = WindowTools.get_pid_by_process_name(CursorConstants.CURSOR_PROCESS_NAME)
 
         # 判断是否找到 Cursor 进程
@@ -49,9 +48,9 @@ class WindowController:
         
         Logger.info(f"找到 Cursor 进程，PID: {pid}")
         
-        WindowTools.focus_pid_window()
+        WindowTools.focus_pid_window(pid)
 
-    def click_cursor_setting() -> bool:
+    def click_cursor_setting(self) -> bool:
         """点击Cursor设置按钮"""
         window = gw.getActiveWindow()
         if not window or 'cursor' not in window.title.lower():
@@ -68,8 +67,7 @@ class WindowController:
         
         return WindowTools.loop_click_button_once(search_region, *CursorConstants.SETTING_BUTTON_IMAGES)
 
-
-    def click_cursor_manager() -> bool:
+    def click_cursor_manager(self) -> bool:
         """点击Cursor manager按钮"""
         window = gw.getActiveWindow()
         if not window or 'cursor' not in window.title.lower():
@@ -86,8 +84,7 @@ class WindowController:
 
         return WindowTools.loop_click_button_once(search_region, *CursorConstants.MANAGE_BUTTON_IMAGES)
 
-
-    def click_cursor_sign() -> bool:
+    def click_cursor_sign(self) -> bool:
         """点击Cursor sign按钮"""
         window = gw.getActiveWindow()
         if not window or 'cursor' not in window.title.lower():

@@ -94,6 +94,21 @@ class Logger:
         Logger._log(message, "ERROR")
     
     @staticmethod
+    def error(message: str, exception: Exception = None) -> None:
+        """
+        记录错误级别的日志消息。
+
+        Args:
+            message: 日志消息内容
+            exception: 可选的异常对象,将记录其堆栈信息
+        """
+        Logger._log(message, "ERROR")
+        if exception:
+            import traceback
+            stack_trace = ''.join(traceback.format_exception(type(exception), exception, exception.__traceback__))
+            Logger._log(f"异常堆栈:\n{stack_trace}", "ERROR")
+
+    @staticmethod
     def clear() -> None:
         """清除所有日志内容。"""
         Logger.log_widget.config(state='normal')

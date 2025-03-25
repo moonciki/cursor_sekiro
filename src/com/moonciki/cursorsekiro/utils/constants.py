@@ -51,3 +51,9 @@ class CursorConstants:
 
     # Cursor认证数据路径
     CURSOR_AUTH_PATH = r"%APPDATA%\Cursor\User Data\Default\Local Storage\leveldb" 
+
+    # Cursor setting url
+    SURSOR_SETTINGS_URL = "https://www.cursor.com/cn/settings"
+
+    # Cursor SIGN url
+    SURSOR_SIGN_URL = "https://authenticator.cursor.sh"

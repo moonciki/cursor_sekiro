@@ -6,6 +6,7 @@ from tkinter import scrolledtext, messagebox
 import os
 import time
 from typing import Callable
+from com.moonciki.cursorsekiro.cursor.chrome_operator import ChromeOperator
 from com.moonciki.cursorsekiro.logger import Logger
 from com.moonciki.cursorsekiro.cursor.controller import CursorController
 from com.moonciki.cursorsekiro.cursor.window import WindowController
@@ -31,6 +32,7 @@ class MainWindow:
         self.status_label = None
         self.cursor_controller = None
         self.window_controller = None
+        self.chromeOperator = None
         
         # 创建日志组件但不立即显示
         self.log_widget = scrolledtext.ScrolledText(
@@ -83,6 +85,7 @@ class MainWindow:
         # 初始化控制器
         self.cursor_controller = CursorController()
         self.window_controller = WindowController()
+        self.chromeOperator = ChromeOperator()
 
     def _create_buttons(self, parent: tk.Frame) -> None:
         """创建按钮区域"""
@@ -229,6 +232,10 @@ class MainWindow:
                     #点击 sign
                     signResult = self.window_controller.click_cursor_sign()
 
+                    if (not signResult):
+                        Logger.warn("打开浏览器失败...")
+                        return;
+
                 else:
                     Logger.info("Manage 成功")
                 
@@ -236,8 +243,12 @@ class MainWindow:
                 time.sleep(5)
 
                 #循环判断是否有chrome 
+                self.chromeOperator.check_chrome_open();
+                
+                Logger.info("chrome 浏览器打开完毕...")
+                time.sleep(1)
 
-
+                self.chromeOperator.check_chrome_open();
 
 
                 #self.window_controller.click_cursor_logout()
@@ -246,4 +257,6 @@ class MainWindow:
                 Logger.info("打开设置成功")
                 
         except Exception as e:
-            Logger.error(f"打开设置失败: {str(e)}") 
+            Logger.error("打开设置失败: ", e)
+            
+             

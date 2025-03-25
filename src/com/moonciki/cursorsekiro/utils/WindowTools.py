@@ -56,18 +56,36 @@ class WindowTools:
 
     @staticmethod
     def focus_pid_window(pid):
-        # 获取所有窗口
-        windows = gw.getAllWindows()
-        for window in windows:
-            if window._hWnd:  # 检查窗口句柄是否存在
-                # 获取窗口的进程 ID
-                window_pid = window.getOwnerId()
-                if window_pid == pid:
-                    # 激活窗口
-                    window.activate()
-                    print(f"Focused window with PID: {pid}")
-                    return
-        print(f"No window found with PID: {pid}")
+        """
+        聚焦指定PID的窗口
+        
+        Args:
+            pid: 进程ID
+        """
+        try:
+            # 获取所有窗口
+            windows = gw.getAllWindows()
+            
+            for window in windows:
+                try:
+                    # 获取窗口的PID - 修复方法
+                    window_handle = window._hWnd  # 获取窗口句柄
+                    _, window_pid = win32process.GetWindowThreadProcessId(window_handle)
+                    
+                    if window_pid == pid:
+                        Logger.info(f"找到匹配的窗口: {window.title}")
+                        window.activate()
+                        return True
+                except Exception as e:
+                    Logger.error(f"处理窗口时出错: {str(e)}")
+                    continue
+            
+            Logger.warn(f"未找到PID为{pid}的窗口")
+            return False
+            
+        except Exception as e:
+            Logger.error(f"聚焦窗口失败: {str(e)}")
+            return False
 
 
 
