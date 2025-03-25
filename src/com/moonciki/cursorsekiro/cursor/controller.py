@@ -7,6 +7,7 @@ import psutil
 import win32com.client
 import shutil
 from typing import Optional
+from  ..utils.WindowTools import WindowTools
 from ..logger import Logger
 from ..utils.constants import CursorConstants
 
@@ -22,33 +23,13 @@ class CursorController:
         self.cursor_path = CursorConstants.CURSOR_EXE_PATH
         self.auth_path = CursorConstants.CURSOR_AUTH_PATH
 
-    @staticmethod
-    def is_cursor_running1() -> bool:
-        """
-        检查Cursor编辑器是否正在运行。
-
-        Returns:
-            bool: 如果Cursor正在运行返回True,否则返回False
-        """
-        for proc in psutil.process_iter(['name']):
-            try:
-                if 'cursor' in proc.info['name'].lower():
-                    return True
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                continue
-        return False
 
     @staticmethod
     def is_cursor_running() -> bool:
         """
-        使用 WMI 查询 Cursor.exe 进程是否存在。
+        查询 Cursor.exe 进程是否存在。
         """
-        wmi = win32com.client.GetObject("winmgmts:")
-        processes = wmi.ExecQuery("SELECT * FROM Win32_Process WHERE Name = '" + CursorConstants.CURSOR_PROCESS_NAME + "'")
-
-        runResult = (len(processes) > 0)
-        Logger.info(f"进程数量： {runResult}");
-
+        runResult = WindowTools.is_process_running(CursorConstants.CURSOR_PROCESS_NAME)
         return runResult
 
 

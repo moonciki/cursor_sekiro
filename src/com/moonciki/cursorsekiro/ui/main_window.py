@@ -165,7 +165,7 @@ class MainWindow:
                 time.sleep(1)  # 等待登出操作完成
             
             # 无论UI操作是否成功,都执行强制登出
-            self.cursor_controller.logout_cursor()
+            #self.cursor_controller.logout_cursor()
             
         except Exception as e:
             Logger.error(f"登出操作失败: {str(e)}")
@@ -235,6 +235,7 @@ class MainWindow:
                 Logger.info("正在打开浏览器...")
                 time.sleep(5)
 
+                #循环判断是否有chrome 
 
 
 
