@@ -13,7 +13,6 @@ import pygetwindow as gw
 import os
 from typing import Optional, Tuple
 
-from com.moonciki.cursorsekiro.utils import WindowTools
 from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
 from ..logger import Logger
 from ..utils.constants import CursorConstants
@@ -169,7 +168,11 @@ class ChromeOperator:
             window.height
         )
 
-        clickResult = WindowTools.loop_click_button_multi(search_region, *CursorConstants.CHROME_BTN_EMAIL_CODE_IMAGE, 5)
+        clickResult = WindowTools.loop_click_button_multi(
+            search_region, 
+            *CursorConstants.CHROME_BTN_EMAIL_CODE_IMAGE, 
+            tryCount=5
+        )
         
         if(not clickResult):
             Logger.warn("登录按钮点击失败")
@@ -260,7 +263,7 @@ class ChromeOperator:
         self.send_login_code()
 
 
-
+        # 登录邮箱内查看
 
 
         Logger.info(f"已尝试登录Cursor账号")

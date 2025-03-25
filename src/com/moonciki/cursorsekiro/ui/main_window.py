@@ -7,10 +7,14 @@ import os
 import time
 import json
 from typing import Callable, Dict, Any
+
+import pygetwindow as gw
 from com.moonciki.cursorsekiro.cursor.chrome_operator import ChromeOperator
 from com.moonciki.cursorsekiro.logger import Logger
 from com.moonciki.cursorsekiro.cursor.controller import CursorController
 from com.moonciki.cursorsekiro.cursor.window import WindowController
+from com.moonciki.cursorsekiro.utils.EmailClient import EmailClient
+from com.moonciki.cursorsekiro.utils.WindowTools import WindowTools
 from com.moonciki.cursorsekiro.utils.constants import CursorConstants
 from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
 
@@ -275,6 +279,30 @@ class MainWindow:
         status_text = "Cursor编辑器正在运行" if is_running else "Cursor编辑器未运行"
         self.status_label.config(text=status_text)
         Logger.info(f"检查Cursor状态: {status_text}")
+
+        Logger.info("测试开始");
+    
+        search_region = (
+            0,0,
+            1920,
+            1080
+        )
+
+        WindowTools.capture_region_image(search_region)
+
+        email_client = EmailClient()
+        if email_client.connect():
+            latest_emails = email_client.get_latest_emails(limit=10)
+            for email in latest_emails:
+                print(f"主题: {email['subject']}")
+                print(f"发件人: {email['from']}")
+                print(f"日期: {email['date']}")
+                print(f"内容: {email['body'][:100]}...")  # 只显示前100个字符
+                print("-" * 50)
+            email_client.disconnect()
+
+        Logger.info(f"clieck_result ")
+
 
     def _launch_cursor(self) -> None:
         """启动Cursor"""

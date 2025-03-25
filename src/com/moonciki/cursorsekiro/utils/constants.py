@@ -83,6 +83,12 @@ class CursorConstants:
         "button/chrome-page-enter-code.png"
     ]
 
+    
+    # 密码框
+    CHROME_INPUT_PASSWORD = [
+        "button/chrome-input-password.png"
+    ]
+
     # Cursor可执行文件路径
     CURSOR_EXE_PATH = os.path.expandvars(
         r"%LOCALAPPDATA%\Programs\Cursor\Cursor.exe"
