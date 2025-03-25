@@ -116,6 +116,8 @@ class EmailClient:
                 self.imap_client.login(self.email_address, self.password)
                 Logger.info("IMAP登录成功")
             except imaplib.IMAP4.error as e:
+                
+                Logger.error("IMAP登录失败: ", e)
                 error_msg = str(e)
                 if "LOGIN failed" in error_msg:
                     Logger.error(f"登录失败: 用户名或密码错误。错误详情: {error_msg}")
