@@ -38,17 +38,18 @@ class EmailConstants:
                     return json.load(f)
             return {}
         except Exception as e:
-            Logger.error(f"加载邮箱配置失败: {str(e)}")
+            Logger.info("首次使用，请配置邮箱")
             return {}
     
     @classmethod
-    def save_config(cls, email_prefix: str, email_password: str) -> bool:
+    def save_config(cls, email_prefix: str, _: str = "", disable_auto_update: bool = True) -> bool:
         """
         保存邮箱配置。
         
         Args:
             email_prefix: 邮箱前缀
-            email_password: 邮箱密码
+            _: 保留参数，用于兼容性
+            disable_auto_update: 是否禁用自动更新
             
         Returns:
             保存是否成功
@@ -58,9 +59,9 @@ class EmailConstants:
             os.makedirs(os.path.dirname(cls.CONFIG_PATH), exist_ok=True)
             
             config = {
-                'email_password': email_password,
                 'email_prefix': email_prefix,
-                'email_suffix': cls.DEFAULT_DOMAIN
+                'email_suffix': cls.DEFAULT_DOMAIN,
+                'disable_auto_update': disable_auto_update
             }
             
             with open(cls.CONFIG_PATH, 'w', encoding='utf-8') as f:
@@ -97,16 +98,6 @@ class EmailConstants:
         return cls.get_config().get('email_prefix', '')
     
     @classmethod
-    def get_email_password(cls) -> str:
-        """
-        获取邮箱密码。
-        
-        Returns:
-            邮箱密码，如果未配置则返回空字符串
-        """
-        return cls.get_config().get('email_password', '')
-    
-    @classmethod
     def is_config_saved(cls) -> bool:
         """
         检查是否已保存邮箱配置。
@@ -119,6 +110,15 @@ class EmailConstants:
             
         config = cls.get_config()
         email_prefix = config.get('email_prefix', '')
-        email_password = config.get('email_password', '')
         
-        return bool(email_prefix and email_password) 
+        return bool(email_prefix and email_prefix.strip())
+    
+    @classmethod
+    def get_disable_auto_update(cls) -> bool:
+        """
+        获取是否禁用自动更新设置。
+        
+        Returns:
+            是否禁用自动更新，默认为True
+        """
+        return cls.get_config().get('disable_auto_update', True) 

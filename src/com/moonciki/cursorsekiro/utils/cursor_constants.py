@@ -127,5 +127,3 @@ class CursorConstants:
     # 126 email url
     EMAIL_126_URL = "https://mail.126.com/"
 
-
-

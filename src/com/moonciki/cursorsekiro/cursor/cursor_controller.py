@@ -82,28 +82,53 @@ class CursorController:
         if not result:
             Logger.error("无法聚焦Cursor窗口")
             raise Exception("无法聚焦Cursor窗口")
+        
+        # 检查窗口是否已经最大化，如果没有则最大化
+        active_window = gw.getActiveWindow()
+        if not active_window.isMaximized:
+            active_window.maximize()
+            Logger.info("Cursor窗口最大化")
+
+        else:
+            Logger.info("Cursor窗口已经处于最大化状态")
 
 
     @staticmethod
-    def logout_cursor() -> None:
-        """退出Cursor的登录状态。"""
+    def close_cursor() -> None:
+        """关闭Cursor进程。"""
+        pid = WindowTools.get_pid_by_process_name(CursorConstants.CURSOR_PROCESS_NAME)
+
+        if not pid:
+            Logger.info("Cursor进程不存在")
+            return
+        
+        Logger.info(f"找到 Cursor 进程，PID: {pid}")
+        
         try:
-            # 关闭Cursor进程
-            for proc in psutil.process_iter(['name']):
-                try:
-                    if 'cursor' in proc.info['name'].lower():
-                        proc.kill()
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    continue
+            process = psutil.Process(pid)
+            process.terminate()  # 尝试正常终止进程
             
-            # 删除登录信息
-            auth_path = os.path.expandvars(CursorConstants.CURSOR_AUTH_PATH)
-            if os.path.exists(auth_path):
-                shutil.rmtree(auth_path)
+            # 等待进程终止，最多等待3秒
+            process.wait(timeout=3)
             
-            Logger.info("已退出Cursor登录")
+            # 如果进程仍然存在，强制结束
+            if process.is_running():
+                process.kill()
+                
+            Logger.info(f"已成功关闭 Cursor 进程 (PID: {pid})")
+        except psutil.NoSuchProcess:
+            Logger.info(f"进程 {pid} 已不存在")
+        except psutil.AccessDenied:
+            Logger.error(f"无权限关闭进程 {pid}，尝试强制结束")
+            try:
+                os.system(f"taskkill /F /PID {pid}")
+                Logger.info(f"已强制关闭 Cursor 进程 (PID: {pid})")
+            except Exception as e:
+                Logger.error(f"强制关闭进程失败: {str(e)}")
+                raise Exception("强制关闭进程失败")
         except Exception as e:
-            Logger.error(f"退出Cursor登录失败: {str(e)}") 
+            Logger.error(f"关闭 Cursor 进程失败: {str(e)}")
+            raise Exception("关闭 Cursor 进程失败")
 
 
     @staticmethod
@@ -203,4 +228,10 @@ class CursorController:
         if not result:
             Logger.error("无法点击Cursor登出按钮")
             raise Exception("无法点击Cursor登出按钮")
+
+    @staticmethod
+    def reset_cursor_machine_code():
+        """重置Cursor机器码"""
+        pass
+
 

@@ -39,7 +39,7 @@ class MainWindow:
         
         # 邮箱相关属性
         self.email_prefix = tk.StringVar()
-        self.email_password = tk.StringVar()
+        self.disable_auto_update = tk.BooleanVar(value=True)
         
         # 创建日志组件但不立即显示
         self.log_widget = scrolledtext.ScrolledText(
@@ -60,7 +60,7 @@ class MainWindow:
         
         # 加载邮箱配置
         self._load_email_config()
-        
+
         # 设置UI
         self._setup_ui()
         
@@ -68,8 +68,9 @@ class MainWindow:
         self.task_running = False
         self.warning_window = None
         
-        # 添加 tkinter 按键绑定
-        self.root.bind('<Control-Shift-S>', self._handle_interrupt)
+        
+        self.root.bind('<Control-Shift-S>', self._handle_interrupt)  # 保留原有的绑定
+        self.root.bind('<Control-Shift-s>', self._handle_interrupt)  # 添加小写的Shift绑定
         
     def _setup_ui(self) -> None:
         """设置用户界面组件。"""
@@ -80,25 +81,20 @@ class MainWindow:
         # 创建邮箱设置区域
         self._create_email_settings(top_frame)
         
-        # 创建主标签
-        config_status = "邮箱配置已保存" if EmailConstants.is_config_saved() else "邮箱配置未保存"
-        status_color = "green" if EmailConstants.is_config_saved() else "red"
-        self.main_label = tk.Label(
+        # 添加运行前提提示
+        prerequisites_label = tk.Label(
             top_frame,
-            text=config_status,
-            font=("Arial", 24),
-            fg=status_color
+            text=(
+                "运行前提：\n"
+                "1. 确保系统默认浏览器是 Chrome\n"
+                "2. 确保系统显示无缩放，无变色\n"
+                "3. 本工具目前只支持126邮箱，运行前，请在chrome 中登录，并勾选30 天免登录"
+            ),
+            font=("Arial", 10),
+            justify=tk.LEFT,
+            fg="blue"
         )
-        self.main_label.pack(expand=True, pady=10)
-        
-        # 添加安全提示
-        security_note = tk.Label(
-            top_frame,
-            text="(注：您的账户与密码均不会上传，但为了安全考虑，请不要使用常用邮箱)",
-            font=("Arial", 9),
-            fg="red"
-        )
-        security_note.pack(pady=(0, 5))
+        prerequisites_label.pack(pady=10)
         
         # 创建状态标签
         self.status_label = tk.Label(
@@ -121,50 +117,39 @@ class MainWindow:
         """创建邮箱设置区域"""
         email_frame = tk.Frame(parent)
         email_frame.pack(fill=tk.X, pady=5)
-        
-        # 邮箱前缀输入框
-        email_prefix_frame = tk.Frame(email_frame)
-        email_prefix_frame.pack(side=tk.LEFT, padx=5)
-        
+
+        # 禁用自动更新选项
+        disable_update_cb = tk.Checkbutton(
+            email_frame,
+            text="禁用自动更新",
+            variable=self.disable_auto_update,
+            font=("Arial", 10)
+        )
+        disable_update_cb.pack(side=tk.LEFT, padx=(5, 10))
+
+        # 邮箱标签
         tk.Label(
-            email_prefix_frame,
+            email_frame,
             text="邮箱:",
             font=("Arial", 10)
         ).pack(side=tk.LEFT)
-        
+
+        # 邮箱前缀输入框
         email_prefix_entry = Entry(
-            email_prefix_frame,
+            email_frame,
             textvariable=self.email_prefix,
             width=15,
             font=("Arial", 10)
         )
         email_prefix_entry.pack(side=tk.LEFT)
-        
+
+        # 邮箱后缀
         tk.Label(
-            email_prefix_frame,
+            email_frame,
             text="@126.com",
             font=("Arial", 10)
         ).pack(side=tk.LEFT)
-        
-        # 邮箱密码输入框
-        password_frame = tk.Frame(email_frame)
-        password_frame.pack(side=tk.LEFT, padx=5)
-        
-        tk.Label(
-            password_frame,
-            text="密码:",
-            font=("Arial", 10)
-        ).pack(side=tk.LEFT)
-        
-        password_entry = Entry(
-            password_frame,
-            textvariable=self.email_password,
-            width=15,
-            font=("Arial", 10),
-            show="*"
-        )
-        password_entry.pack(side=tk.LEFT)
-        
+
         # 保存按钮
         self.save_button = tk.Button(
             email_frame,
@@ -174,6 +159,23 @@ class MainWindow:
         )
         self.save_button.pack(side=tk.LEFT, padx=5)
 
+        # 配置状态标签
+        try:
+            email_prefix = EmailConstants.get_email_prefix()
+            config_status = "(邮箱配置已保存)" if email_prefix and email_prefix.strip() else "(请配置邮箱)"
+            status_color = "green" if email_prefix and email_prefix.strip() else "red"
+        except Exception:
+            config_status = "(请配置邮箱)"
+            status_color = "red"
+            
+        self.config_status_label = tk.Label(
+            email_frame,
+            text=config_status,
+            font=("Arial", 10),
+            fg=status_color
+        )
+        self.config_status_label.pack(side=tk.LEFT)
+
     def _is_email_saved(self) -> bool:
         """检查是否已保存邮箱配置"""
         return EmailConstants.is_config_saved()
@@ -182,33 +184,35 @@ class MainWindow:
         """加载邮箱配置"""
         try:
             self.email_prefix.set(EmailConstants.get_email_prefix())
-            self.email_password.set(EmailConstants.get_email_password())
+            self.disable_auto_update.set(EmailConstants.get_disable_auto_update())
             if EmailConstants.is_config_saved():
                 Logger.info("邮箱配置已加载")
         except Exception as e:
-            Logger.error(f"加载邮箱配置失败: {str(e)}")
+            Logger.info("首次使用，请配置邮箱")
 
     def _save_email_config(self) -> None:
         """保存邮箱配置"""
         try:
-            # 保存配置
+            email_prefix = self.email_prefix.get().strip()
+            
+            # 检查邮箱前缀是否为空
+            if not email_prefix:
+                self.config_status_label.config(text="(请配置邮箱)", fg="red")
+                messagebox.showwarning("提示", "请输入邮箱前缀")
+                return
+                
+            # 保存配置，包含自动更新设置
             EmailConstants.save_config(
-                self.email_prefix.get(),
-                self.email_password.get()
+                email_prefix, 
+                "",
+                self.disable_auto_update.get()
             )
             
-            # 检查保存后的状态
-            is_saved = EmailConstants.is_config_saved()
+            # 更新UI状态
+            self.config_status_label.config(text="(邮箱配置已保存)", fg="green")
+            Logger.info(f"邮箱配置已保存: {email_prefix}@126.com")
+            messagebox.showinfo("提示", "邮箱配置已保存")
             
-            # 根据状态更新主标签
-            if is_saved:
-                self.main_label.config(text="邮箱配置已保存", fg="green")
-                message = "邮箱配置已保存"
-            else:
-                self.main_label.config(text="邮箱配置未保存", fg="red")
-                message = "邮箱配置已保存，但邮箱或密码为空"
-            
-            messagebox.showinfo("提示", message)
         except Exception as e:
             Logger.error(f"保存邮箱配置失败: {str(e)}")
             messagebox.showerror("错误", f"保存邮箱配置失败: {str(e)}")
@@ -357,19 +361,100 @@ class MainWindow:
             self.warning_window.destroy()
             self.warning_window = None
 
-    def _handle_interrupt(self, event=None):
+    def _handle_interrupt(self, event=None) -> None:
         """处理中断热键"""
-        self.task_running = False
-        Logger.info("操作已中断 (Ctrl+Shift+S)")
-        self.status_label.config(text="操作已中断")
-        self._hide_warning()
-
+        if self.task_running:  # 只在任务运行时响应中断
+            self.task_running = False
+            Logger.info("操作已中断 (Ctrl+Shift+S)")
+            self.status_label.config(text="操作已中断")
+            self._hide_warning()
+            # 确保消息框显示在最前面
+            self.root.lift()
+            messagebox.showinfo("提示", "操作已中断")
 
     def check_task_status(self) -> None:
         """检查任务状态"""
         if not self.task_running:
             Logger.error("已终止")
             raise Exception("已终止")
+
+    def open_cursor_setting(self) -> None:
+        Logger.info("尝试聚焦Cursor窗口...")
+        # 执行设置相关操作
+        CursorController.focus_cursor_window()
+        Logger.info("窗口聚焦成功，等待界面响应...")
+        time.sleep(0.5)  # 增加等待时间
+        
+        self.check_task_status()
+        
+        Logger.info("尝试点击设置按钮...")
+        CursorController.click_cursor_setting()
+        
+        self.check_task_status()
+        
+
+
+    def delete_cursor_process(self) -> None:
+        """删除Cursor账号"""
+        # 检查是否需要启动Cursor
+        CursorController.run_cursor()
+        Logger.info("Cursor已启动")
+
+        self.check_task_status()
+        
+        self.open_cursor_setting()
+        
+        Logger.info("尝试点击管理按钮...")
+        time.sleep(1)
+        manaResult = CursorController.click_cursor_manager()
+        
+        self.check_task_status()
+
+        if not manaResult:
+            Logger.info("当前账号未登录，尝试登录...")
+            CursorController.click_cursor_sign()
+            
+            self.check_task_status()
+            Logger.info("跳转登录页面")
+        else:
+            Logger.info("跳转管理页面")
+
+        Logger.info("正在打开浏览器...")
+        time.sleep(1)
+
+        self.check_task_status()
+        #循环判断是否有chrome
+        self.chromeOperator.check_chrome_open()
+
+        Logger.info("chrome 浏览器打开完毕...")
+        time.sleep(0.5)
+
+        self.check_task_status()
+        self.chromeOperator.loop_check_setting()
+
+        time.sleep(0.5)
+
+        self.check_task_status()
+        # 删除账号
+        self.chromeOperator.delete_cursor_account()
+        time.sleep(0.5)
+
+        self.check_task_status()
+
+    # 关闭Cursor进程
+    def close_cursor_process(self) -> None:
+        """关闭Cursor进程"""
+        # 退出登录
+        self.open_cursor_setting()
+        time.sleep(0.5)
+        CursorController.click_cursor_logout()
+        time.sleep(0.5)
+        self.check_task_status()
+        CursorController.focus_cursor_window()
+        time.sleep(0.3)
+        CursorController.close_cursor()
+        time.sleep(1)
+        self.check_task_status()
 
     def _execute_cursor_settings(self) -> None:
         """执行Cursor设置相关操作"""
@@ -393,64 +478,21 @@ class MainWindow:
             Logger.info("开始打开Cursor设置流程")
             
             try:
-                # 检查是否需要启动Cursor
-                CursorController.run_cursor()
-                Logger.info("Cursor已启动")
-
-                self.check_task_status()
-               
-                Logger.info("尝试聚焦Cursor窗口...")
-                # 执行设置相关操作
-                CursorController.focus_cursor_window()
-                Logger.info("窗口聚焦成功，等待界面响应...")
-                time.sleep(0.5)  # 增加等待时间
-                
-                self.check_task_status()
-                
-                Logger.info("尝试点击设置按钮...")
-                CursorController.click_cursor_setting()
-                
-                self.check_task_status()
-                
-                Logger.info("尝试点击管理按钮...")
-                time.sleep(1)
-                manaResult = CursorController.click_cursor_manager()
-                
-                self.check_task_status()
-
-                if not manaResult:
-                    Logger.info("当前账号未登录，尝试登录...")
-                    CursorController.click_cursor_sign()
-                    
-                    self.check_task_status()
-                    Logger.info("跳转登录页面")
-                else:
-                    Logger.info("跳转管理页面")
-
-                Logger.info("正在打开浏览器...")
-                time.sleep(1)
-
-                self.check_task_status()
-                #循环判断是否有chrome
-                self.chromeOperator.check_chrome_open()
-
-                Logger.info("chrome 浏览器打开完毕...")
-                time.sleep(1)
-
-                self.check_task_status()
-                self.chromeOperator.loop_check_setting()
-
-                time.sleep(1)
-
-                self.check_task_status()
                 # 删除账号
-                self.chromeOperator.delete_cursor_account()
-                time.sleep(1)
+                self.delete_cursor_process()
 
-                self.check_task_status()
+                # 退出登录
+                self.close_cursor_process()
+
+                # 重置 cursor 机器码
+                CursorController.reset_cursor_machine_code()
+
+
+
+
                 # 登录
                 #self.chromeOperator.do_cursor_login()
-                time.sleep(1)
+                time.sleep(0.5)
 
                 self.check_task_status()
 

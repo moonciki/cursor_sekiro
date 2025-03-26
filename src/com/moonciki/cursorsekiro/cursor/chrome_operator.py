@@ -69,7 +69,7 @@ class ChromeOperator:
                     Logger.info("Chrome浏览器已经处于最大化状态")
 
                 break
-            time.sleep(2)
+            time.sleep(1)
             wait_time += 1
             Logger.info(f"等待Chrome浏览器打开... {wait_time}秒")
         else:
@@ -598,8 +598,7 @@ class ChromeOperator:
             Logger.warn("账号确认删除失败")
             raise Exception("账号确认删除失败")
 
-        time.sleep(2)
-        
+        time.sleep(1)
         Logger.info("账号删除成功")
 
 
@@ -608,7 +607,7 @@ class ChromeOperator:
 
     def loop_check_setting(self):
         wait_time = 0
-        while wait_time < 5:
+        while wait_time < 8:
 
             openSult = self._cursor_setting_page()
 
@@ -619,7 +618,7 @@ class ChromeOperator:
             else:
                 wait_time += 1
                 Logger.info(f"等待Cursor setting page ... {wait_time}秒")
-                time.sleep(2)
+                time.sleep(1)
         else:
             error_msg = "Cursor setting page打开超时"
             Logger.error(error_msg)
