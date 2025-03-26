@@ -1,12 +1,11 @@
 """
-邮件客户端模块，用于登录126邮箱并接收邮件。
+邮件客户端模块，用于登录Outlook邮箱并接收邮件。
 """
 import imaplib
 import email
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import ssl
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 import re
@@ -28,18 +27,6 @@ class EmailClient:
     
     # 常见邮箱服务器配置
     EMAIL_SERVERS = {
-        "126.com": {
-            "imap_server": "imap.126.com",
-            "imap_port": 993,
-            "smtp_server": "smtp.126.com",
-            "smtp_port": 465  # 126邮箱使用465端口进行SSL加密
-        },
-        "163.com": {
-            "imap_server": "imap.163.com",
-            "imap_port": 993,
-            "smtp_server": "smtp.163.com", 
-            "smtp_port": 465
-        },
         "outlook.com": {
             "imap_server": "outlook.office365.com",
             "imap_port": 993,
@@ -57,6 +44,12 @@ class EmailClient:
             "imap_port": 993,
             "smtp_server": "smtp.qq.com",
             "smtp_port": 587
+        },
+        "163.com": {
+            "imap_server": "imap.163.com",
+            "imap_port": 993,
+            "smtp_server": "smtp.163.com",
+            "smtp_port": 25
         }
     }
     
@@ -65,7 +58,7 @@ class EmailClient:
         初始化邮件客户端。
         """
         self.email_address = EmailConstants.get_email()
-        self.password = EmailConstants.get_email_password()  # 对于126邮箱，这里需要使用授权码而不是登录密码
+        self.password = EmailConstants.get_email_password()
         self.imap_client = None
         self.smtp_client = None
         self.server_config = self._get_server_config()
@@ -106,9 +99,7 @@ class EmailClient:
         """
         if not self.email_address or not self.password:
             Logger.error("邮箱配置不完整，无法连接")
-            self._show_error_dialog("邮箱配置不完整", 
-                "请先完成邮箱配置再尝试连接。\n"
-                "注意：126邮箱需要使用授权码而不是登录密码")
+            self._show_error_dialog("邮箱配置不完整", "请先完成邮箱配置再尝试连接。")
             return False
             
         try:
@@ -116,83 +107,35 @@ class EmailClient:
             imap_server = self.server_config.get("imap_server")
             imap_port = self.server_config.get("imap_port")
             
-            # 创建更安全的 SSL 上下文
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = True
-            ssl_context.verify_mode = ssl.CERT_REQUIRED
-            
             Logger.info(f"尝试连接到IMAP服务器: {imap_server}:{imap_port}")
-            self.imap_client = imaplib.IMAP4_SSL(imap_server, imap_port, ssl_context=ssl_context)
-            
-            # 设置更长的超时时间
-            self.imap_client.socket().settimeout(30)
+            self.imap_client = imaplib.IMAP4_SSL(imap_server, imap_port)
             
             # 尝试登录
             try:
                 Logger.info(f"尝试使用账户 {self.email_address} 登录")
-                
-                # 设置 IMAP ID 信息
-                imap_id = (
-                    "name", "CursorSekiro",
-                    "version", "1.0.0",
-                    "vendor", "MoonCiki",
-                    "support-email", "support@moonciki.com",
-                    "contact", self.email_address,
-                    "date", datetime.now().strftime("%Y-%m-%d"),
-                    "os", "Windows",  # 添加操作系统信息
-                    "os-version", "10",  # 添加系统版本
-                    "command", "select"  # 指定命令
-                )
-                
-                # 先发送 ID 信息
-                try:
-                    Logger.info("发送 IMAP ID 信息...")
-                    typ, data = self.imap_client._simple_command('ID', '("' + '" "'.join(imap_id) + '")')
-                    if typ == 'OK':
-                        Logger.info("IMAP ID 信息发送成功")
-                        if data and data[0]:
-                            server_id = data[0].decode('utf-8')
-                            Logger.info(f"服务器 ID 信息: {server_id}")
-                    else:
-                        Logger.info(f"IMAP ID 命令未成功: {typ} {data if data else ''}")
-                except Exception as e:
-                    Logger.info(f"发送 IMAP ID 信息时出错: {str(e)}")
-                
-                # 尝试登录
                 self.imap_client.login(self.email_address, self.password)
                 Logger.info("IMAP登录成功")
-                
-                # 选择收件箱
-                try:
-                    status, data = self.imap_client.select('INBOX')
-                    if status != 'OK':
-                        Logger.error(f"选择收件箱失败: {data}")
-                    else:
-                        Logger.info("成功选择收件箱")
-                except Exception as e:
-                    Logger.error(f"选择收件箱时出错: {str(e)}")
-                
-                return True
-                
             except imaplib.IMAP4.error as e:
+                
                 Logger.error("IMAP登录失败: ", e)
                 error_msg = str(e)
-                if "LOGIN failed" in error_msg or "Unsafe Login" in error_msg:
-                    Logger.error(f"登录失败: {error_msg}")
+                if "LOGIN failed" in error_msg:
+                    Logger.error(f"登录失败: 用户名或密码错误。错误详情: {error_msg}")
                     self._show_error_dialog("邮箱登录失败", 
                         "请确保以下几点:\n"
-                        "1. 用户名正确\n"
-                        "2. 使用的是授权码而不是登录密码\n"
-                        "3. 邮箱账户已开启IMAP协议\n"
-                        "4. 授权码未过期\n"
-                        "5. 如果仍然失败，请联系邮箱客服")
+                        "1. 用户名和密码正确\n"
+                        "2. 邮箱账户已开启IMAP协议\n"
+                        "3. 如使用双重验证，请使用应用密码而非普通密码")
                 else:
                     Logger.error(f"IMAP登录失败: {error_msg}")
                     self._show_error_dialog("邮箱登录失败", f"IMAP登录失败: {error_msg}")
                 return False
             
+            Logger.info(f"成功连接到邮件服务器: {self.email_address}")
+            return True
         except Exception as e:
             Logger.error(f"连接邮件服务器失败: {str(e)}")
+            Logger.info("请检查网络连接和服务器配置")
             self._show_error_dialog("连接失败", "无法连接到邮件服务器，请检查网络连接和服务器配置。")
             return False
     
@@ -248,11 +191,12 @@ class EmailClient:
             Logger.error(f"获取邮箱文件夹时出错: {str(e)}")
             return []
     
-    def get_latest_emails(self, limit: int = 10, unread_only: bool = False) -> List[Dict[str, Any]]:
+    def get_latest_emails(self, folder: str = "INBOX", limit: int = 10, unread_only: bool = False) -> List[Dict[str, Any]]:
         """
         获取最新的邮件。
         
         Args:
+            folder: 邮件文件夹，默认为收件箱
             limit: 获取的邮件数量限制
             unread_only: 是否只获取未读邮件
             
@@ -265,12 +209,10 @@ class EmailClient:
         
         emails = []
         try:
-            # 直接选择 INBOX
-            Logger.info("选择收件箱...")
-
-            status, messages = self.imap_client.select("INBOX")  # 不传参数默认选择 INBOX
+            # 选择邮件文件夹
+            status, messages = self.imap_client.select(folder)
             if status != "OK":
-                Logger.error("无法选择收件箱")
+                Logger.error(f"选择邮件文件夹 {folder} 失败")
                 return []
             
             # 获取邮件的UID
@@ -307,12 +249,31 @@ class EmailClient:
                 except:
                     date = datetime.now()
                 
+                # 检查是否有附件
+                has_attachment = False
+                attachments = []
+                for part in email_message.walk():
+                    if part.get_content_maintype() == 'multipart':
+                        continue
+                    if part.get('Content-Disposition') and 'attachment' in part.get('Content-Disposition'):
+                        has_attachment = True
+                        filename = self._decode_header(part.get_filename())
+                        attachments.append(filename)
+                
+                # 检查是否已读
+                status, flags_data = self.imap_client.fetch(message_id, "(FLAGS)")
+                flags = flags_data[0].decode()
+                is_read = "\\Seen" in flags
+                
                 emails.append({
                     "id": message_id.decode(),
                     "subject": subject,
                     "from": from_address,
                     "date": date,
-                    "body": body
+                    "body": body,
+                    "is_read": is_read,
+                    "has_attachment": has_attachment,
+                    "attachments": attachments
                 })
             
             Logger.info(f"成功获取 {len(emails)} 封最新邮件")
@@ -340,12 +301,11 @@ class EmailClient:
             return False
         
         try:
-            # 创建SMTP客户端（使用SSL）
+            # 创建SMTP客户端
             Logger.info(f"连接SMTP服务器: {self.server_config.get('smtp_server')}:{self.server_config.get('smtp_port')}")
-            self.smtp_client = smtplib.SMTP_SSL(
-                self.server_config.get('smtp_server'), 
-                self.server_config.get('smtp_port')
-            )
+            self.smtp_client = smtplib.SMTP(self.server_config.get('smtp_server'), self.server_config.get('smtp_port'))
+            self.smtp_client.ehlo()
+            self.smtp_client.starttls()
             
             try:
                 Logger.info(f"尝试SMTP登录: {self.email_address}")
@@ -355,10 +315,9 @@ class EmailClient:
                 Logger.error(error_msg)
                 self._show_error_dialog("邮箱登录失败", 
                     "请确保以下几点:\n"
-                    "1. 用户名正确\n"
-                    "2. 使用的是授权码而不是登录密码\n"
-                    "3. 邮箱账户已开启SMTP协议\n"
-                    "4. 授权码未过期")
+                    "1. 用户名和密码正确\n"
+                    "2. 邮箱账户已开启SMTP协议\n"
+                    "3. 如使用双重验证，请使用应用密码而非普通密码")
                 return False
             
             # 创建邮件
@@ -483,20 +442,25 @@ class EmailClient:
     
     def _get_email_body(self, email_message: email.message.Message) -> str:
         """
-        获取邮件正文内容，只获取文本内容。
+        获取邮件正文内容。
         
         Args:
             email_message: 邮件对象
             
         Returns:
-            邮件正文文本
+            邮件正文
         """
         if email_message.is_multipart():
             # 如果邮件包含多个部分，递归获取文本内容
             for part in email_message.walk():
                 content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
                 
-                # 只获取文本内容
+                # 跳过附件
+                if "attachment" in content_disposition:
+                    continue
+                
+                # 获取文本内容
                 if content_type == "text/plain":
                     try:
                         body = part.get_payload(decode=True)
@@ -506,14 +470,18 @@ class EmailClient:
                         Logger.error(f"解析邮件正文失败: {str(e)}")
                         continue
             
-            # 如果没有找到纯文本，尝试从HTML中提取
+            # 如果没有找到纯文本内容，尝试获取HTML内容
             for part in email_message.walk():
                 content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
+                
+                if "attachment" in content_disposition:
+                    continue
+                
                 if content_type == "text/html":
                     try:
                         body = part.get_payload(decode=True)
                         charset = part.get_content_charset() or "utf-8"
-                        # 可以在这里添加HTML到纯文本的转换
                         return body.decode(charset, errors="replace")
                     except Exception as e:
                         Logger.error(f"解析邮件HTML正文失败: {str(e)}")

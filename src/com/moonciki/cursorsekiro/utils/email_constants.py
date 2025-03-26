@@ -19,7 +19,7 @@ class EmailConstants:
     )
     
     # 默认邮箱域名
-    DEFAULT_DOMAIN = "@outlook.com"
+    DEFAULT_DOMAIN = "@126.com"
     
     @classmethod
     def get_config(cls) -> Dict[str, Any]:

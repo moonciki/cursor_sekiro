@@ -89,10 +89,30 @@ class CursorConstants:
         "button/chrome-input-password.png"
     ]
 
+    # 全部已读
+    CHROME_BTN_ALL_READ = [
+        "button/chrome-btn-all-read.png"
+    ]
+
     # Cursor可执行文件路径
     CURSOR_EXE_PATH = os.path.expandvars(
         r"%LOCALAPPDATA%\Programs\Cursor\Cursor.exe"
     )
+
+    # 收信按钮
+    CHROME_BTN_RECEIVE_EMAIL = [
+        "button/chrome-btm-receive-email.png"
+    ]
+
+    # 新邮件按钮
+    CHROME_BTN_NEW_EMAIL = [
+        "button/chrome-btn-new-email.png"
+    ]
+
+    # 邮件内容
+    CHROME_EMAIL_CONTENT = [
+        "button/chrome-text-email-content.png"
+    ]
 
     # Cursor认证数据路径
     CURSOR_AUTH_PATH = r"%APPDATA%\Cursor\User Data\Default\Local Storage\leveldb" 
@@ -102,3 +122,10 @@ class CursorConstants:
 
     # Cursor SIGN url
     SURSOR_SIGN_URL = "https://authenticator.cursor.sh"
+
+    
+    # 126 email url
+    EMAIL_126_URL = "https://mail.126.com/"
+
+
+

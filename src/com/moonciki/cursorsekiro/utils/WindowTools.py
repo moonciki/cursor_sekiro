@@ -7,6 +7,7 @@ import time
 import psutil
 import pyautogui
 import pyperclip
+from pyscreeze import Box
 import win32com.client
 import shutil
 from typing import Optional, Tuple

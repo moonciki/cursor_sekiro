@@ -211,6 +211,215 @@ class ChromeOperator:
             raise Exception(error_msg)
 
 
+    def receive_email(self) -> bool:
+        """
+        接收邮件
+        """
+        
+        window = gw.getActiveWindow()
+
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            window.width,
+            window.height
+        )
+
+        wait_time = 0
+        while wait_time < 5:
+            # 点击ctrl + f 输入框
+            pyautogui.hotkey('ctrl', 'f')
+            time.sleep(0.5)
+
+            WindowTools.paste_text("收 信")
+
+            clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_RECEIVE_EMAIL)
+
+            if(clickResult):
+                return True
+
+            else:
+                wait_time += 1
+                Logger.info(f"等待 收信 ... {wait_time}秒")
+                time.sleep(2)
+        else:
+            error_msg = "收信点击失败"
+            Logger.error(error_msg)
+            raise Exception(error_msg)
+
+
+    def click_new_email(self) -> bool:
+        """
+        点击新邮件
+        """
+        
+        window = gw.getActiveWindow()
+
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            min(window.width, 1000),
+            min(window.height, 600)
+        )
+
+        wait_time = 0
+        while wait_time < 2:
+            # 点击ctrl + f 输入框
+            pyautogui.hotkey('ctrl', 'f')
+            time.sleep(0.5)
+
+
+            Logger.info("检查是否收到 Cursor 新邮件")
+
+            clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_NEW_EMAIL)
+
+            if(clickResult):
+                Logger.info("已收到 Cursor 新邮件")
+                return True
+
+            else:
+                wait_time += 1
+                Logger.info(f"查询新邮件 ... {wait_time}秒")
+                time.sleep(2)
+        else:
+            return False
+
+    def get_email_code(self) -> str:
+        """
+        获取邮件内容
+        """
+
+        window = gw.getActiveWindow()
+
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            window.width,
+            window.height
+        )
+
+        wait_time = 0
+        clickResult = False
+        while wait_time < 5:
+            clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_EMAIL_CONTENT)
+            if clickResult:
+                Logger.info("成功点击邮件内容")
+                break
+            else:
+                wait_time += 1
+                Logger.info(f"尝试点击邮件内容 ... 第{wait_time}次")
+                time.sleep(1)
+        else:
+            error_msg = "邮件内容获取失败"
+            Logger.error(error_msg)
+            raise Exception(error_msg)
+
+
+        # ctrl + a 全选
+        pyautogui.hotkey('ctrl', 'a')
+        time.sleep(0.5)
+
+        # ctrl + c 复制
+        pyautogui.hotkey('ctrl', 'c')
+        time.sleep(0.5)
+
+        # 获取剪贴板内容    
+        email_content = pyperclip.paste()
+
+        Logger.info(f"邮件内容: {email_content}")
+
+        # 截取字符串
+        # Your one-time code is:   与  This code expires in 中间的字符串
+
+        front_text = "Your one-time code is:"
+        end_text = "This code expires in"
+
+        start_index = email_content.find(front_text) + len(front_text)
+        end_index = email_content.find(end_text)
+        code = email_content[start_index:end_index].strip()
+        code = code.strip()
+        Logger.info(f"验证码: {code}")
+        return code
+
+    def all_read_email(self):
+        """
+        全部阅读邮件
+        """
+
+        window = gw.getActiveWindow()   
+
+        time.sleep(1)
+
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            window.width,
+            window.height
+        )
+
+        receive_email_result = self.receive_email()
+
+        if(not receive_email_result):
+            Logger.warn("收信失败")
+            raise Exception("收信失败")
+
+
+        # 点击ctrl + f 输入框
+        pyautogui.hotkey('ctrl', 'f')
+        time.sleep(0.5)
+
+        WindowTools.paste_text("全部设为已读")
+        time.sleep(0.5)
+
+        clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_ALL_READ)
+
+        if(not clickResult):
+            Logger.warn("全部阅读失败")
+
+
+    def email_login(self) -> str:
+        """
+        邮箱登录
+        """
+
+        # 按 ctrl + N 打开新窗口
+        pyautogui.hotkey('ctrl', 'n')
+        time.sleep(2)
+        
+        self.turn_location(CursorConstants.EMAIL_126_URL)
+        time.sleep(1)
+
+        wait_time = 0
+        while wait_time < 20:
+
+            self.receive_email()
+            time.sleep(1)
+
+            clickResult = self.click_new_email()
+
+            if(clickResult):
+                break;
+
+            else:
+                wait_time += 1
+                Logger.info(f"查询新邮件 ... {wait_time}秒")
+                time.sleep(2)
+
+        else:
+            error_msg = "查询新邮件超时"
+            Logger.error(error_msg)
+            raise Exception(error_msg)
+
+        # 获取邮件内容
+        email_code = self.get_email_code()
+
+        self.all_read_email()
+
+        # 按 ctrl + w 关闭新窗口
+        pyautogui.hotkey('ctrl', 'w')
+
+        return email_code
+
 
     def login_cursor(self) -> bool:
         """
@@ -262,9 +471,26 @@ class ChromeOperator:
         #发送登录验证码
         self.send_login_code()
 
-
         # 登录邮箱内查看
+        cursorCode = self.email_login()
 
+        # 输入验证码
+        clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_SIGN_BLUR_IMAGES)
+        if(not clickResult):
+            raise Exception("验证码页面解析失败!")
+
+        time.sleep(0.5)
+        pyautogui.press('tab')
+        time.sleep(0.3)
+
+        WindowTools.paste_text(cursorCode)
+        time.sleep(2)
+        Logger.info("输入验证码成功，正在登录 ... ")
+
+
+        
+
+        #########################
 
         Logger.info(f"已尝试登录Cursor账号")
         return True

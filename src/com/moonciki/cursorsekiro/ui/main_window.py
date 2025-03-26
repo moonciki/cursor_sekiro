@@ -140,7 +140,7 @@ class MainWindow:
         
         tk.Label(
             email_prefix_frame,
-            text="@outlook.com",
+            text="@126.com",
             font=("Arial", 10)
         ).pack(side=tk.LEFT)
         
