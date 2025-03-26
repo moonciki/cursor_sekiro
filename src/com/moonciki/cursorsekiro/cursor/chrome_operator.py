@@ -15,8 +15,8 @@ from typing import Optional, Tuple
 
 from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
 from ..logger import Logger
-from ..utils.constants import CursorConstants
-from ..utils.WindowTools import WindowTools
+from ..utils.cursor_constants import CursorConstants
+from ..utils.window_tools import WindowTools
 
 from tkinter import messagebox
 import tkinter as tk
@@ -601,13 +601,6 @@ class ChromeOperator:
         time.sleep(2)
         
         Logger.info("账号删除成功")
-
-
-
-
-
-
-
 
 
 

@@ -12,10 +12,11 @@ import win32com.client
 import shutil
 from typing import Optional, Tuple
 from ..logger import Logger
-from .constants import CursorConstants
+from .cursor_constants import CursorConstants
 import win32gui
 import win32process
 import win32con
+import pythoncom
 
 import pygetwindow as gw
 
@@ -29,6 +30,7 @@ class WindowTools:
         """
         使用 WMI 查询 process_name 进程是否存在。
         """
+        pythoncom.CoInitialize()
         wmi = win32com.client.GetObject("winmgmts:")
         processes = wmi.ExecQuery(f"SELECT * FROM Win32_Process WHERE Name = '{process_name}'")
 
@@ -49,15 +51,18 @@ class WindowTools:
         Returns:
             list: 包含所有匹配进程的 PID 列表。
         """
+        pythoncom.CoInitialize()
         wmi = win32com.client.GetObject("winmgmts:")
         processes = wmi.ExecQuery(f"SELECT * FROM Win32_Process WHERE Name = '{process_name}'")
-        pidText = [process.Properties_("ProcessID").Value for process in processes]
-        return pidText[0] if pidText else None  # 返回第一个PID，如果没有找到则返回None
+        # 只获取第一个进程的PID
+        for process in processes:
+            return process.Properties_("ProcessID").Value
+        return None  # 如果没有找到进程则返回None
 
 
 
     @staticmethod
-    def focus_pid_window(pid):
+    def focus_pid_window(pid) -> bool:
         """
         聚焦指定PID的窗口
         

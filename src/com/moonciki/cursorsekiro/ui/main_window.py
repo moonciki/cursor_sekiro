@@ -2,20 +2,19 @@
 主窗口UI模块。
 """
 import tkinter as tk
-from tkinter import scrolledtext, messagebox, Entry
+from tkinter import scrolledtext, messagebox, Entry, Toplevel, Label
 import os
 import time
 import json
 from typing import Callable, Dict, Any
+import threading
 
 import pygetwindow as gw
 from com.moonciki.cursorsekiro.cursor.chrome_operator import ChromeOperator
 from com.moonciki.cursorsekiro.logger import Logger
-from com.moonciki.cursorsekiro.cursor.controller import CursorController
-from com.moonciki.cursorsekiro.cursor.window import WindowController
-from com.moonciki.cursorsekiro.utils.EmailClient import EmailClient
-from com.moonciki.cursorsekiro.utils.WindowTools import WindowTools
-from com.moonciki.cursorsekiro.utils.constants import CursorConstants
+from com.moonciki.cursorsekiro.cursor.cursor_controller import CursorController
+from com.moonciki.cursorsekiro.utils.window_tools import WindowTools
+from com.moonciki.cursorsekiro.utils.cursor_constants import CursorConstants
 from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
 
 class MainWindow:
@@ -36,8 +35,6 @@ class MainWindow:
         
         # 先初始化必要的属性
         self.status_label = None
-        self.cursor_controller = None
-        self.window_controller = None
         self.chromeOperator = None
         
         # 邮箱相关属性
@@ -66,6 +63,13 @@ class MainWindow:
         
         # 设置UI
         self._setup_ui()
+        
+        # 添加任务控制标志
+        self.task_running = False
+        self.warning_window = None
+        
+        # 添加 tkinter 按键绑定
+        self.root.bind('<Control-Shift-S>', self._handle_interrupt)
         
     def _setup_ui(self) -> None:
         """设置用户界面组件。"""
@@ -111,8 +115,6 @@ class MainWindow:
         self._create_log_area()
         
         # 初始化控制器
-        self.cursor_controller = CursorController()
-        self.window_controller = WindowController()
         self.chromeOperator = ChromeOperator()
 
     def _create_email_settings(self, parent: tk.Frame) -> None:
@@ -290,17 +292,6 @@ class MainWindow:
 
         WindowTools.capture_region_image(search_region)
 
-        email_client = EmailClient()
-        if email_client.connect():
-            latest_emails = email_client.get_latest_emails(limit=10)
-            for email in latest_emails:
-                print(f"主题: {email['subject']}")
-                print(f"发件人: {email['from']}")
-                print(f"日期: {email['date']}")
-                print(f"内容: {email['body'][:100]}...")  # 只显示前100个字符
-                print("-" * 50)
-            email_client.disconnect()
-
         Logger.info(f"clieck_result ")
 
 
@@ -312,7 +303,7 @@ class MainWindow:
         """退出Cursor登录"""
         try:
             # 先尝试通过UI点击登出
-            if self.window_controller.click_logout_button():
+            if CursorController.click_cursor_logout():
                 time.sleep(1)  # 等待登出操作完成
             
             # 无论UI操作是否成功,都执行强制登出
@@ -325,94 +316,185 @@ class MainWindow:
         """清除日志"""
         Logger.clear()
 
-    def _open_cursor_settings(self) -> None:
-        """打开Cursor设置"""
+    def _show_warning(self):
+        """显示警告窗口"""
+        if self.warning_window:
+            return
+            
+        self.warning_window = Toplevel(self.root)
+        self.warning_window.overrideredirect(True)  # 无边框窗口
+        self.warning_window.attributes('-topmost', True)  # 置顶
+        #self.warning_window.attributes('-alpha', 0.5)  # 设置透明度
+        
+        # 获取屏幕宽度和高度
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        
+        # 设置窗口位置和大小
+        window_width = 420  # 减小宽度
+        window_height = 50  # 减小高度
+        x = (screen_width - window_width) // 2
+        y = screen_height - window_height - 45  # 距离底部像素
+        self.warning_window.geometry(f'{window_width}x{window_height}+{x}+{y}')
+        
+        # 创建一个Frame作为背景
+        bg_frame = tk.Frame(
+            self.warning_window
+        )
+        bg_frame.pack(fill='both', expand=True)
+        
+        # 添加警告文本
+        Label(
+            bg_frame,
+            text="请勿操作电脑，喝杯茶休息一下，马上就好☕ \n(按Ctrl+Shift+S中断操作) ",
+            fg='#FF0000',  # 鲜艳的红色
+            font=('Arial', 14, 'bold')
+        ).pack(fill='both', expand=True, padx=5)  # 添加一些内边距
+
+    def _hide_warning(self):
+        """隐藏警告窗口"""
+        if self.warning_window:
+            self.warning_window.destroy()
+            self.warning_window = None
+
+    def _handle_interrupt(self, event=None):
+        """处理中断热键"""
+        self.task_running = False
+        Logger.info("操作已中断 (Ctrl+Shift+S)")
+        self.status_label.config(text="操作已中断")
+        self._hide_warning()
+
+
+    def check_task_status(self) -> None:
+        """检查任务状态"""
+        if not self.task_running:
+            Logger.error("已终止")
+            raise Exception("已终止")
+
+    def _execute_cursor_settings(self) -> None:
+        """执行Cursor设置相关操作"""
         try:
-            # 首先检查 Cursor.exe 是否存在
+            self.task_running = True
+            
+            # 显示警告窗口
+            self.root.after(0, self._show_warning)
+            
+            # 更新状态
+            self.root.after(0, lambda: self.status_label.config(text="正在执行操作..."))
+            
             if not os.path.exists(CursorConstants.CURSOR_EXE_PATH):
-                error_msg = f"未找到Cursor程序，请确认Cursor已正确安装。\n期望路径: {CursorConstants.CURSOR_EXE_PATH}"
-                Logger.error(error_msg)
-                messagebox.showerror("错误", error_msg)
+                Logger.error("未找到Cursor程序，请确认Cursor已正确安装。")
+                return
+            
+            # 确认是否继续
+            if not messagebox.askyesno("确认", "即将开始操作，过程中请勿操作电脑。\n按Ctrl+Shift+S可以随时中断操作。\n是否继续？"):
                 return
                 
-            result = messagebox.showwarning(
-                "操作提示",
-                "激活过程中，请勿操作电脑",
-                icon='warning'
-            )
+            Logger.info("开始打开Cursor设置流程")
             
-            if result == 'ok':
-                Logger.info("开始打开Cursor设置流程")
-                
-                if not self.cursor_controller.is_cursor_running():
-                    Logger.info("Cursor未运行，正在启动...")
-                    self.cursor_controller.launch_cursor()
+            try:
+                # 检查是否需要启动Cursor
+                CursorController.run_cursor()
+                Logger.info("Cursor已启动")
 
-                    # 循环检查Cursor是否运行,最多等待30秒
-                    wait_time = 0
-                    while not self.cursor_controller.is_cursor_running():
-                        time.sleep(3)
-                        wait_time += 1
-                        Logger.info(f"等待Cursor启动... {wait_time}秒")
-                        if wait_time >= 30:
-                            error_msg = "等待Cursor启动超时"
-                            Logger.error(error_msg)
-                            messagebox.showerror("错误", error_msg)
-                            return
-                    Logger.info("等待 Cursor 启动 。。。 ")
-                    time.sleep(10)
-                    Logger.info("Cursor已成功启动 ！")
-
-                else:
-                    Logger.info("Cursor已运行 ...")
+                self.check_task_status()
+               
+                Logger.info("尝试聚焦Cursor窗口...")
+                # 执行设置相关操作
+                CursorController.focus_cursor_window()
+                Logger.info("窗口聚焦成功，等待界面响应...")
+                time.sleep(0.5)  # 增加等待时间
                 
-                self.window_controller.focus_cursor_window()
+                self.check_task_status()
+                
+                Logger.info("尝试点击设置按钮...")
+                CursorController.click_cursor_setting()
+                
+                self.check_task_status()
+                
+                Logger.info("尝试点击管理按钮...")
                 time.sleep(1)
+                manaResult = CursorController.click_cursor_manager()
                 
-                self.window_controller.click_cursor_setting()
-                time.sleep(1)
-                
-                manaResult = self.window_controller.click_cursor_manager()
+                self.check_task_status()
 
-                if(not manaResult):
-                    Logger.warn("当前账号未登录")
-
-                    #点击 sign
-                    signResult = self.window_controller.click_cursor_sign()
-
-                    time.sleep(4)
-                    if (not signResult):
-                        Logger.warn("打开浏览器失败...")
-                        return;
-
+                if not manaResult:
+                    Logger.info("当前账号未登录，尝试登录...")
+                    CursorController.click_cursor_sign()
+                    
+                    self.check_task_status()
+                    Logger.info("跳转登录页面")
                 else:
-                    Logger.info("Manage 成功")
-                
+                    Logger.info("跳转管理页面")
+
                 Logger.info("正在打开浏览器...")
                 time.sleep(1)
 
-                #循环判断是否有chrome 
+                self.check_task_status()
+                #循环判断是否有chrome
                 self.chromeOperator.check_chrome_open()
-                
+
                 Logger.info("chrome 浏览器打开完毕...")
                 time.sleep(1)
 
+                self.check_task_status()
                 self.chromeOperator.loop_check_setting()
 
                 time.sleep(1)
-                
+
+                self.check_task_status()
                 # 删除账号
                 self.chromeOperator.delete_cursor_account()
                 time.sleep(1)
 
+                self.check_task_status()
                 # 登录
-                self.chromeOperator.do_cursor_login()
+                #self.chromeOperator.do_cursor_login()
                 time.sleep(1)
 
+                self.check_task_status()
 
 
+                Logger.info("操作完成")
+                self.root.after(0, lambda: self.status_label.config(text="操作完成"))
                 
-        except Exception as e:
-            Logger.error("打开设置失败: ", e)
+            except Exception as e:
+                Logger.error(f"操作执行出错: {str(e)}")
+                Logger.error(f"错误类型: {type(e)}")
+                if hasattr(e, 'winerror'):
+                    Logger.error(f"Windows错误码: {e.winerror}")
+                if hasattr(e, 'strerror'):
+                    Logger.error(f"错误描述: {e.strerror}")
+                raise
             
+        except Exception as e:
+            error_msg = f"设置过程出错: {str(e)}"
+            Logger.error(error_msg)
+            self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
+        finally:
+            self.task_running = False
+            # 隐藏警告窗口
+            self.root.after(0, self._hide_warning)
+
+    def _open_cursor_settings(self) -> None:
+        """打开Cursor设置"""
+        # 如果已有任务在运行，不启动新任务
+        if self.task_running:
+            Logger.warn("有操作正在执行中...")
+            return
+            
+        # 启动新线程执行任务
+        thread = threading.Thread(target=self._execute_cursor_settings)
+        thread.daemon = True
+        thread.start()
+
+    def __del__(self):
+        """清理资源"""
+        try:
+            # 清理警告窗口
+            if self.warning_window:
+                self.warning_window.destroy()
+        except:
+            pass
+        
              
