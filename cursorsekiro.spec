@@ -1,15 +1,26 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
+import sys
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
+
+# 收集 tkinter 相关的所有数据文件
+tkinter_datas = []
+if not any('excludes=tkinter' in arg for arg in sys.argv):
+    try:
+        from PyInstaller.utils.hooks import collect_data_files
+        tkinter_datas = collect_data_files('tkinter')
+    except:
+        pass
 
 a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
-    # 不包含resources和config，这些将作为外部目录
-    datas=[],
+    # 添加 tkinter 数据文件
+    datas=tkinter_datas,
     hiddenimports=[
         'com.moonciki.cursorsekiro.app',
         'com.moonciki.cursorsekiro.utils',
@@ -39,15 +50,21 @@ a = Analysis(
         'pygetwindow',
         'pdb',
         'unittest',
+        # 如果你的应用使用 tkinter，请添加以下内容
+        'tkinter',
+        'tkinter.ttk',
+        '_tkinter',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    # 排除不必要的模块以减小体积，但不排除必要模块
+    # 如果你的应用不使用 tkinter，可以将其排除
     excludes=[
         'matplotlib', 'scipy', 'pandas', 'tkinter.test', 
         'pydoc',
         'pytest', '_pytest'
+        # 如果你的应用不使用 tkinter，取消下面这行的注释
+        # 'tkinter', '_tkinter', 'Tkinter'
     ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,

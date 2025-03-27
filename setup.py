@@ -49,6 +49,13 @@ def copy_external_directories():
         shutil.copytree('resources', resources_target)
         print(f"已复制resources目录到{resources_target}")
     
+    # 复制config目录（如果存在）
+    if os.path.exists('config'):
+        config_target = os.path.join('dist', 'config')
+        if os.path.exists(config_target):
+            shutil.rmtree(config_target)
+        shutil.copytree('config', config_target)
+        print(f"已复制config目录到{config_target}")
     
 
 if __name__ == "__main__":

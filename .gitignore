@@ -39,3 +39,4 @@ tmp
 
 config/*.json
 out
+*.log

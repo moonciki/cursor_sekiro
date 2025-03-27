@@ -533,10 +533,10 @@ class MainWindow:
         self.check_task_status()
 
     
-    def sure_login_cursor(self) -> bool:
+    def sure_login_cursor(self, tryTime: int = 8) -> bool:
         
         wait_time = 0
-        while wait_time < 8:
+        while wait_time < tryTime:
 
             try:
                 self.chromeOperator.click_cursor_sure_loginin()
@@ -579,8 +579,16 @@ class MainWindow:
 
             self.check_task_status()
             Logger.info("chrome 浏览器打开完毕...")
+            time.sleep(1)
+
+            sureResult = self.sure_login_cursor(tryTime = 2)
+
+            if(sureResult):
+                Logger.info("Cursor 激活成功 ! ")
+                return;
 
             self.chromeOperator.do_cursor_login()
+            
             time.sleep(0.5)
             sureResult = self.sure_login_cursor()
 
