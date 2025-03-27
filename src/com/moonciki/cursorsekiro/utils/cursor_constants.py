@@ -2,6 +2,7 @@
 常量定义模块。
 """
 import os
+import pyautogui
 
 class CursorConstants:
     """
@@ -17,6 +18,9 @@ class CursorConstants:
     ICON_PATH = os.path.join(RESOURCES_DIR, 'icon', 'cursor-sekiro.ico')
 
     CURSOR_PROCESS_NAME = "Cursor.exe"
+
+    # 获取屏幕宽高
+    SCREEN_WIDTH, SCREEN_HEIGHT = pyautogui.size()
 
     # 定义类变量
     CURSOR_PROCESS_NAMES = [

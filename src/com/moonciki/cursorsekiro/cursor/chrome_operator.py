@@ -139,9 +139,9 @@ class ChromeOperator:
             
             # 清空地址栏并输入新URL
             pyautogui.hotkey('ctrl', 'a')
-            time.sleep(0.5)
+            time.sleep(0.2)
             WindowTools.paste_text(url)
-            time.sleep(0.5)
+            time.sleep(0.2)
             
             # 按回车键导航到URL
             pyautogui.press('enter')
@@ -425,6 +425,7 @@ class ChromeOperator:
         time.sleep(0.5)
         clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_ALL_READ)
 
+        time.sleep(1)
         if(not clickResult):
             Logger.warn("全部阅读失败")
 

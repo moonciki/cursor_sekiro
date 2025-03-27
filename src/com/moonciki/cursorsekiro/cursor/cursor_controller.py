@@ -60,7 +60,42 @@ class CursorController:
         try:
             if not CursorController.is_cursor_running():
                 os.startfile(CursorConstants.CURSOR_EXE_PATH)
-                Logger.info("已启动Cursor")
+                Logger.info("正在启动Cursor")
+                time.sleep(1)
+
+                wait_time = 0
+                while wait_time < 15:
+
+                    try:
+                        CursorController.focus_cursor_window()
+
+                        window = CursorController.get_cursor_window()
+        
+                        # 设置按钮通常在右上角
+                        search_region = (
+                            max(0, window.right - 800),
+                            max(0, window.top),
+                            min(800, window.right),
+                            min(300, window.height)
+                        )
+                        # 是否有settings按钮
+                        result_settings = WindowTools.loop_check_img_exist(search_region, *CursorConstants.SETTING_BUTTON_IMAGES)
+                        
+                        if result_settings:
+                            Logger.info("Cursor 启动成功 ... ")
+                            break;
+                         
+                    except Exception as e:
+                        Logger.warn(f"Cursor 启动中，请稍候 ... {wait_time}秒")
+                    
+                    wait_time += 1
+                    Logger.info(f"等待Cursor 启动 ... {wait_time}秒")
+                    time.sleep(1)
+                else:
+                    error_msg = "Cursor 启动超时"
+                    Logger.error(error_msg)
+                    raise Exception(error_msg)
+
             else:
                 Logger.info("Cursor已在运行")
         except Exception as e:
@@ -178,7 +213,7 @@ class CursorController:
             0,
             0, 
             max(0, window.width),
-            min(80, window.height)
+            max(0, window.height)
         )
         # 是否有登录按钮
         result_sign = WindowTools.loop_check_img_exist(search_region, *CursorConstants.SIGN_BUTTON_IMAGES)
@@ -299,7 +334,7 @@ class CursorController:
             process_list = ", ".join([f"{p.name()} (PID: {p.pid})" for p in remaining_processes])
             Logger.error(f"未能关闭的进程: {process_list}")
             return False
-            
+
         Logger.info("所有Cursor进程已关闭")
         return success
 

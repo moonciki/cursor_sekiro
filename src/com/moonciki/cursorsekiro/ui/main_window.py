@@ -222,6 +222,15 @@ class MainWindow:
         button_frame = tk.Frame(parent)
         button_frame.pack(pady=5)
         
+        # 登录Cursor按钮
+        tk.Button(
+            button_frame,
+            text="登录Cursor",
+            command=self._login_cursor,
+            font=("Arial", 12),
+            fg="blue"
+        ).pack(side=tk.LEFT, padx=5)
+        
         # 重置Cursor按钮
         tk.Button(
             button_frame,
@@ -230,31 +239,26 @@ class MainWindow:
             font=("Arial", 12)
         ).pack(side=tk.LEFT, padx=5)
         
-        # 测试按钮
+        # 一键激活按钮 (原Cursor设置)
         tk.Button(
             button_frame,
+            text="一键激活",
+            command=self._open_cursor_settings,
+            font=("Arial", 12),
+            fg="green"
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # 创建新的一行用于测试按钮
+        test_frame = tk.Frame(parent)
+        test_frame.pack(pady=2)
+        
+        # 测试按钮
+        tk.Button(
+            test_frame,
             text="测试",
             command=self._test_cursor,
             font=("Arial", 12),
             fg="red"
-        ).pack(side=tk.LEFT, padx=5)
-        
-        # 关闭Cursor"
-        tk.Button(
-            button_frame,
-            text="关闭Cursor",
-            command=self._close_cursor,
-            font=("Arial", 12),
-            fg="blue"
-        ).pack(side=tk.LEFT, padx=5)
-        
-        # 设置按钮
-        tk.Button(
-            button_frame,
-            text="Cursor设置",
-            command=self._open_cursor_settings,
-            font=("Arial", 12),
-            fg="green"
         ).pack(side=tk.LEFT, padx=5)
 
     def _create_log_area(self) -> None:
@@ -302,13 +306,56 @@ class MainWindow:
 
         self.task_running = True
         
-        """启动Cursor"""
+        self.open_cursor_setting()
         time.sleep(1)
-        # 退出登录
-        self.close_cursor_process()
-        Logger.info(f"登录状态")
+        loginResult = CursorController.check_cursor_login()
+
+        if(loginResult):
+            Logger.info("退出登录 ... ")
+            
+            CursorController.click_cursor_logout()
+            time.sleep(0.5)
+
         
         self.task_running = False
+
+    def _login_cursor(self) -> None:
+        """登录Cursor"""
+        # 如果已有任务在运行，不启动新任务
+        if self.task_running:
+            Logger.warn("有操作正在执行中...")
+            return
+            
+        # 启动新线程执行任务
+        thread = threading.Thread(target=self._execute_login_cursor)
+        thread.daemon = True
+        thread.start()
+        
+    def _execute_login_cursor(self) -> None:
+        """执行登录Cursor操作"""
+        try:
+            self.task_running = True
+            
+            # 显示警告窗口
+            self.root.after(0, self._show_warning)
+            
+            # 更新状态
+            self.root.after(0, lambda: self.status_label.config(text="正在登录Cursor..."))
+            
+            self.sign_cursor_process()
+
+            Logger.info("Cursor 登录成功")
+            self.root.after(0, lambda: self.status_label.config(text="Cursor 登录成功"))
+            self.root.after(0, lambda: messagebox.showinfo("成功", "Cursor 登录成功"))
+            
+        except Exception as e:
+            error_msg = f"登录过程出错: {str(e)}"
+            Logger.error(error_msg)
+            self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
+        finally:
+            self.task_running = False
+            # 隐藏警告窗口
+            self.root.after(0, self._hide_warning)
 
     def _close_cursor(self) -> None:
         """关闭Cursor"""
@@ -469,7 +516,6 @@ class MainWindow:
         self.check_task_status()
 
     
-    
     def sure_login_cursor(self) -> bool:
         
         wait_time = 0
@@ -492,11 +538,18 @@ class MainWindow:
     def loop_cursor_signin(self):
 
         wait_time = 0
-        while wait_time < 35:
+        while wait_time < 20:
             self.open_cursor_setting()
             
             Logger.info("尝试点击 sign in按钮...")
             time.sleep(0.5)
+
+            loginResult = CursorController.check_cursor_login()
+
+            if(loginResult):
+                Logger.info("Cursor 已登录，登录完成...")
+                break;
+
             manaResult = CursorController.click_cursor_sign()
 
             Logger.info("正在打开浏览器...")
@@ -516,14 +569,14 @@ class MainWindow:
 
             if(sureResult):
                 Logger.info("Cursor 激活成功 ! ")
-                break;
-        
+                return;
+            
         else:
-            error_msg = "Cursor 登录失败 ... "
+            error_msg = "Cursor 登录失败，请手动登录 ... "
             Logger.error(error_msg)
             raise Exception(error_msg)
 
-    def sign_cursor_process(self) -> None:
+    def sign_cursor_process(self):
         """登录Cursor"""
         # 检查是否需要启动Cursor
         CursorController.run_cursor()
@@ -531,9 +584,8 @@ class MainWindow:
 
         self.check_task_status()
         
-        self.loop_cursor_signin(self);
+        self.loop_cursor_signin();
         
-
         
 
     def _execute_cursor_settings(self) -> None:
@@ -565,17 +617,20 @@ class MainWindow:
                 # 退出登录
                 self.close_cursor_process()
                 Logger.info("#### 关闭Cursor 成功 ... ")
+
                 time.sleep(1)
+
                 # 重置 cursor 机器码
                 # 获取自动更新设置
                 disable_update = self.disable_auto_update.get()
                 CursorReset.reset_cursor(disable_update)
-                
                 Logger.info("Cursor重置成功")
+                time.sleep(1)
+                
                 self.sign_cursor_process()
-
                 Logger.info("操作完成")
                 self.root.after(0, lambda: self.status_label.config(text="操作完成"))
+                self.root.after(0, lambda: messagebox.showinfo("成功", "Cursor激活成功"))
                 
             except Exception as e:
                 Logger.error(f"操作执行出错: ", e)
