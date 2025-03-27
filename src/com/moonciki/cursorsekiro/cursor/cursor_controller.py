@@ -8,7 +8,9 @@ import psutil
 import win32com.client
 import shutil
 import pygetwindow as gw
-from typing import Optional
+from typing import List, Optional
+
+from com.moonciki.cursorsekiro.cursor.cursor_reset import CursorReset
 from  ..utils.window_tools import WindowTools
 from ..logger import Logger
 from ..utils.cursor_constants import CursorConstants
@@ -69,15 +71,7 @@ class CursorController:
     @staticmethod
     def focus_cursor_window():
         """聚焦Cursor窗口。"""
-        pid = WindowTools.get_pid_by_process_name(CursorConstants.CURSOR_PROCESS_NAME)
-
-        # 判断是否找到 Cursor 进程
-        if not pid:
-            Logger.error("未找到 Cursor 进程")
-            raise Exception("未找到 Cursor 进程")
-        
-        Logger.info(f"找到 Cursor 进程，PID: {pid}")
-        result = WindowTools.focus_pid_window(pid)
+        result = WindowTools.focus_window_by_process(CursorConstants.CURSOR_PROCESS_NAME)
 
         if not result:
             Logger.error("无法聚焦Cursor窗口")
@@ -92,43 +86,6 @@ class CursorController:
         else:
             Logger.info("Cursor窗口已经处于最大化状态")
 
-
-    @staticmethod
-    def close_cursor() -> None:
-        """关闭Cursor进程。"""
-        pid = WindowTools.get_pid_by_process_name(CursorConstants.CURSOR_PROCESS_NAME)
-
-        if not pid:
-            Logger.info("Cursor进程不存在")
-            return
-        
-        Logger.info(f"找到 Cursor 进程，PID: {pid}")
-        
-        try:
-            process = psutil.Process(pid)
-            process.terminate()  # 尝试正常终止进程
-            
-            # 等待进程终止，最多等待3秒
-            process.wait(timeout=3)
-            
-            # 如果进程仍然存在，强制结束
-            if process.is_running():
-                process.kill()
-                
-            Logger.info(f"已成功关闭 Cursor 进程 (PID: {pid})")
-        except psutil.NoSuchProcess:
-            Logger.info(f"进程 {pid} 已不存在")
-        except psutil.AccessDenied:
-            Logger.error(f"无权限关闭进程 {pid}，尝试强制结束")
-            try:
-                os.system(f"taskkill /F /PID {pid}")
-                Logger.info(f"已强制关闭 Cursor 进程 (PID: {pid})")
-            except Exception as e:
-                Logger.error(f"强制关闭进程失败: {str(e)}")
-                raise Exception("强制关闭进程失败")
-        except Exception as e:
-            Logger.error(f"关闭 Cursor 进程失败: {str(e)}")
-            raise Exception("关闭 Cursor 进程失败")
 
 
     @staticmethod
@@ -209,6 +166,38 @@ class CursorController:
             raise Exception("无法点击Cursor sign按钮")
 
     @staticmethod
+    def check_cursor_login() -> bool:
+
+        time.sleep(0.5)
+
+        window = CursorController.get_cursor_window()
+            
+        time.sleep(0.5)
+        # 登出按钮通常在整个窗口范围内
+        search_region = (
+            max(0, window.left),
+            max(0, window.top), 
+            max(0, window.width),
+            max(0, window.height)
+        )
+        Logger.info("@@@@@@登录找图-1 ... ")
+        # 是否有登录按钮
+        result_sign = WindowTools.loop_check_img_exist(search_region, *CursorConstants.SIGN_BUTTON_IMAGES)
+        time.sleep(0.5)
+        Logger.info("@@@@@@登录找图-2 ... ")
+        # 是否有登出按钮
+        result_loginout = WindowTools.loop_check_img_exist(search_region, *CursorConstants.LOGOUT_BUTTON_IMAGES)
+
+        Logger.info("@@@@@@登录找图-3 ... ")
+        if(result_loginout):
+            return True
+
+        if(result_sign):
+            return False
+
+        return False
+
+    @staticmethod
     def click_cursor_logout():
         """点击Cursor登出按钮"""
         window = CursorController.get_cursor_window()
@@ -221,17 +210,100 @@ class CursorController:
             max(0, window.height)
         )
         
-        WindowTools.capture_region_image(search_region)
-
         result = WindowTools.loop_click_button_once(search_region, *CursorConstants.LOGOUT_BUTTON_IMAGES)
 
         if not result:
             Logger.error("无法点击Cursor登出按钮")
             raise Exception("无法点击Cursor登出按钮")
 
+
+
+
+
+
+
+
+
     @staticmethod
-    def reset_cursor_machine_code():
-        """重置Cursor机器码"""
-        pass
+    def get_cursor_processes() -> List[psutil.Process]:
+        """
+        获取所有运行中的Cursor相关进程
+
+        Returns:
+            List[psutil.Process]: Cursor相关进程列表
+        """
+        cursor_processes = []
+        for proc in psutil.process_iter(['name', 'pid']):
+            try:
+                if proc.info['name'] in CursorConstants.CURSOR_PROCESS_NAMES:
+                    cursor_processes.append(proc)
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        return cursor_processes
+
+    @staticmethod
+    def terminate_process(process: psutil.Process) -> bool:
+        """
+        尝试终止单个进程
+
+        Args:
+            process: 要终止的进程
+
+        Returns:
+            bool: 是否成功终止进程
+        """
+        try:
+            process_name = process.name()
+            pid = process.pid
+            
+            # 首先尝试正常终止
+            process.terminate()
+            
+            # 等待进程结束
+            try:
+                process.wait(timeout=3)
+                Logger.info(f"终止进程: {process_name} (PID: {pid})")
+                return True
+            except psutil.TimeoutExpired:
+                # 如果超时，强制结束进程
+                process.kill()
+                Logger.warn(f"强制终止: {process_name} (PID: {pid})")
+                return True
+                
+        except psutil.NoSuchProcess:
+            Logger.info(f"进程不存在: {process_name} (PID: {pid})")
+            return True
+        except Exception as e:
+            Logger.error(f"终止失败: {str(e)}", e)
+            return False
+
+    @staticmethod
+    def close_cursor() -> bool:
+        """
+        关闭所有Cursor相关进程
+
+        Returns:
+            bool: 是否成功关闭所有进程
+        """
+        cursor_processes = CursorController.get_cursor_processes()
+        
+        if not cursor_processes:
+            Logger.info("未发现Cursor进程")
+            return True
+            
+        success = True
+        for process in cursor_processes:
+            if not CursorController.terminate_process(process):
+                success = False
+                
+        # 最后验证
+        remaining_processes = CursorController.get_cursor_processes()
+        if remaining_processes:
+            process_list = ", ".join([f"{p.name()} (PID: {p.pid})" for p in remaining_processes])
+            Logger.error(f"未能关闭的进程: {process_list}")
+            return False
+            
+        Logger.info("所有Cursor进程已关闭")
+        return success
 
 

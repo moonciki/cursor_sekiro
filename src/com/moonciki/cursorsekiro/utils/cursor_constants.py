@@ -14,9 +14,16 @@ class CursorConstants:
     RESOURCES_DIR = os.path.join(PROJECT_ROOT, 'resources', 'images')
 
     # 图标路径
-    ICON_PATH = os.path.join(RESOURCES_DIR, 'icon', 'icon.png')
+    ICON_PATH = os.path.join(RESOURCES_DIR, 'icon', 'cursor-sekiro.ico')
 
     CURSOR_PROCESS_NAME = "Cursor.exe"
+
+    # 定义类变量
+    CURSOR_PROCESS_NAMES = [
+        "Cursor.exe",
+        "cursor.exe",
+        "cursor-updater.exe"
+    ]
 
     # 按钮图片名称
     SETTING_BUTTON_IMAGES = [
@@ -82,7 +89,11 @@ class CursorConstants:
     CHROME_PAGE_ENTER_CODE = [
         "button/chrome_cursor/chrome-page-enter-code.png"
     ]
-
+    # 确认登录
+    CHROME_BTN_LOGIN_SURE = [
+        "button/chrome_cursor/chrome-btn-login-sure.png"
+    ]
+    
     
     # 密码框
     CHROME_INPUT_PASSWORD = [
@@ -102,6 +113,16 @@ class CursorConstants:
     # 新邮件按钮
     CHROME_BTN_NEW_EMAIL = [
         "button/chrome_email/chrome-btn-new-email.png"
+    ]
+
+    # 邮件内容
+    CHROME_TEXT_EMAIL_CONTENT_START = [
+        "button/chrome_email/chrome_text_email_content_start.png"
+    ]
+
+    # 邮件内容
+    CHROME_TEXT_EMAIL_CONTENT_END = [
+        "button/chrome_email/chrome_text_email_content_end.png"
     ]
 
     # 邮件内容

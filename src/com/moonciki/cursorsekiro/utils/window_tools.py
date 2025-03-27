@@ -18,6 +18,7 @@ import win32process
 import win32con
 import pythoncom
 
+
 import pygetwindow as gw
 
 class WindowTools:
@@ -60,6 +61,20 @@ class WindowTools:
         return None  # 如果没有找到进程则返回None
 
 
+    @staticmethod
+    def focus_window_by_process(process_name):
+        pythoncom.CoInitialize()
+        wmi = win32com.client.GetObject("winmgmts:")
+        processes = wmi.ExecQuery(f"SELECT * FROM Win32_Process WHERE Name = '{process_name}'")
+        # 只获取第一个进程的PID
+        for process in processes:
+            onePid = process.Properties_("ProcessID").Value
+
+            focusResult = WindowTools.focus_pid_window(onePid)
+            if focusResult:
+                return True
+
+        return False
 
     @staticmethod
     def focus_pid_window(pid) -> bool:
@@ -82,6 +97,7 @@ class WindowTools:
                     if window_pid == pid:
                         Logger.info(f"找到匹配的窗口: {window.title}")
                         window.activate()
+                        time.sleep(1)
                         return True
                 except Exception as e:
                     Logger.error(f"处理窗口时出错: {str(e)}")
@@ -189,6 +205,7 @@ class WindowTools:
 
 
 
+
     @staticmethod
     def _click_single_button(button_image_name: str, search_region: Tuple[int, int, int, int]) -> bool:
         """
@@ -240,3 +257,140 @@ class WindowTools:
             Logger.error(f"点击按钮失败: {str(e)}")
             return False
 
+
+
+    @staticmethod
+    def _find_img_position(image_name: str, search_region: Tuple[int, int, int, int]) -> Optional[Box]:
+        """
+        在Cursor编辑器中查找指定图片的位置。
+
+        Args:
+            image_name: 图片文件名
+            search_region: 搜索区域的坐标 (left, top, width, height)
+        
+        Returns:
+            Optional[Box]: 找到的图片位置，未找到则返回None
+        """
+        button_image_path = os.path.join(CursorConstants.RESOURCES_DIR, image_name)
+        
+        if not os.path.exists(button_image_path):
+            Logger.error(f"图片不存在: {button_image_path}")
+            raise Exception(f"图片不存在: {button_image_path}")
+           
+        try:
+            button_location = pyautogui.locateOnScreen(
+                button_image_path,
+                confidence=0.8,
+                region=search_region
+            )
+            
+            # button_location是Box对象，包含left, top, width, height属性
+            # 可以直接通过button_location.left和button_location.top获取左上角坐标
+            return button_location
+            
+        except Exception as e:
+            Logger.error(f"查找图片失败: ", e)
+            raise e
+
+    @staticmethod
+    def loop_check_img_exist(search_region: Tuple[int, int, int, int], *button_images: str) -> bool:
+        """
+        找图
+        """
+        
+        for image in button_images:
+            button_location = WindowTools._find_img_position(image, search_region)
+            if button_location:
+                return True
+        return False
+    
+    @staticmethod
+    def loop_find_img_position(search_region: Tuple[int, int, int, int], *button_images: str) -> Optional[Box]:
+        """
+        在指定区域内查找多个图片中的任意一个，返回找到的第一个图片位置
+        
+        Args:
+            search_region: 搜索区域的坐标 (left, top, width, height)
+            button_images: 要查找的图片文件名列表
+            
+        Returns:
+            Optional[Box]: 找到的图片位置，未找到则返回None
+        """
+        
+        for image in button_images:
+            button_location = WindowTools._find_img_position(image, search_region)
+
+            if button_location:
+                return button_location
+        return None
+    
+    @staticmethod
+    def mouse_move_to(x: int, y: int, duration: float = 0.2) -> None:
+        """
+        鼠标移动到指定坐标
+        
+        Args:
+            x: 目标x坐标
+            y: 目标y坐标
+            duration: 移动持续时间，默认0.2秒
+        """
+        try:
+            pyautogui.moveTo(x, y, duration=duration)
+            Logger.info(f"鼠标已移动到坐标: ({x}, {y})")
+        except Exception as e:
+            Logger.error(f"鼠标移动失败: {e}")
+            raise e
+    
+    @staticmethod
+    def mouse_left_down() -> None:
+        """
+        鼠标左键按下
+        """
+        try:
+            pyautogui.mouseDown(button='left')
+            Logger.info("鼠标左键已按下")
+        except Exception as e:
+            Logger.error(f"鼠标左键按下失败: {e}")
+            raise e
+
+    @staticmethod
+    def mouse_left_up() -> None:
+        """
+        鼠标左键抬起
+        """
+        try:
+            pyautogui.mouseUp(button='left')
+            Logger.info("鼠标左键已抬起")
+        except Exception as e:
+            Logger.error(f"鼠标左键抬起失败: {e}")
+            raise e
+
+
+    @staticmethod
+    def mouse_select_text(from_x: int, from_y: int, to_x: int, to_y: int, duration: float = 0.2) -> None:
+        """
+        鼠标选择文本
+        
+        Args:
+            from_x: 起始点x坐标
+            from_y: 起始点y坐标
+            to_x: 结束点x坐标
+            to_y: 结束点y坐标
+            duration: 移动持续时间，默认0.2秒
+        """
+        try:
+            # 移动到起始位置
+            WindowTools.mouse_move_to(from_x, from_y, duration)
+            # 按下鼠标左键
+            WindowTools.mouse_left_down()
+            time.sleep(duration)
+            # 移动到结束位置
+            WindowTools.mouse_move_to(to_x, to_y, duration)
+            time.sleep(duration)
+            # 释放鼠标左键
+            WindowTools.mouse_left_up()
+            Logger.info(f"已选择从 ({from_x}, {from_y}) 到 ({to_x}, {to_y}) 的文本")
+        except Exception as e:
+            Logger.error(f"文本选择失败: {e}")
+            raise e
+        

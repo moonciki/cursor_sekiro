@@ -139,13 +139,13 @@ class ChromeOperator:
             
             # 清空地址栏并输入新URL
             pyautogui.hotkey('ctrl', 'a')
-            time.sleep(0.3)
+            time.sleep(0.5)
             WindowTools.paste_text(url)
-            time.sleep(0.3)
+            time.sleep(0.5)
             
             # 按回车键导航到URL
             pyautogui.press('enter')
-            time.sleep(2)  # 等待页面加载
+            time.sleep(1)  # 等待页面加载
             
             Logger.info(f"已跳转到URL: {url}")
             return url
@@ -171,21 +171,19 @@ class ChromeOperator:
         clickResult = WindowTools.loop_click_button_multi(
             search_region, 
             *CursorConstants.CHROME_BTN_EMAIL_CODE_IMAGE, 
-            tryCount=5
+            tryCount=10
         )
         
         if(not clickResult):
-            Logger.warn("登录按钮点击失败")
-            raise Exception("登录按钮点击失败")
+            Logger.warn("发送登录验证码点击失败")
+            raise Exception("发送登录验证码点击失败")
 
         Logger.info("发送登录验证码点击成功")
 
         # 定位到输入框（通常登录页面的输入框是页面中唯一或第一个输入框）
-        window = gw.getActiveWindow()
-        
-        
+
         wait_time = 0
-        while wait_time < 5:
+        while wait_time < 25:
 
             clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_ROBOT_CHECK_IMAGE)
 
@@ -197,18 +195,32 @@ class ChromeOperator:
                 if(not clickResult):
                     Logger.warn("也不是输入验证码页面")
                 else:
-                    time.sleep(0.5)
                     pyautogui.press('tab')
                     Logger.info("输入验证码页面")
                     break
             
             wait_time += 1
             Logger.info(f"尝试发送登录验证码 ... {wait_time}秒")
-            time.sleep(2)
+            time.sleep(1)
         else:
             error_msg = "尝试发送登录验证码超时"
             Logger.error(error_msg)
             raise Exception(error_msg)
+
+    def highlight_html_text(self, text: str) -> bool:
+        """
+        高亮html文本
+        """
+        # 点击ctrl + f 输入框
+        pyautogui.hotkey('ctrl', 'f')
+        time.sleep(0.1)
+
+        WindowTools.paste_text(text)
+        time.sleep(0.2)
+
+        #按 enter 键
+        pyautogui.press('enter')
+        time.sleep(0.2)
 
 
     def receive_email(self) -> bool:
@@ -226,12 +238,9 @@ class ChromeOperator:
         )
 
         wait_time = 0
-        while wait_time < 5:
-            # 点击ctrl + f 输入框
-            pyautogui.hotkey('ctrl', 'f')
-            time.sleep(0.5)
-
-            WindowTools.paste_text("收 信")
+        while wait_time < 15:
+            
+            self.highlight_html_text("收 信")
 
             clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_RECEIVE_EMAIL)
 
@@ -241,7 +250,7 @@ class ChromeOperator:
             else:
                 wait_time += 1
                 Logger.info(f"等待 收信 ... {wait_time}秒")
-                time.sleep(2)
+                time.sleep(1)
         else:
             error_msg = "收信点击失败"
             Logger.error(error_msg)
@@ -264,13 +273,7 @@ class ChromeOperator:
 
         wait_time = 0
         while wait_time < 2:
-            # 点击ctrl + f 输入框
-            pyautogui.hotkey('ctrl', 'f')
-            time.sleep(0.5)
-
-
             Logger.info("检查是否收到 Cursor 新邮件")
-
             clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_NEW_EMAIL)
 
             if(clickResult):
@@ -280,11 +283,63 @@ class ChromeOperator:
             else:
                 wait_time += 1
                 Logger.info(f"查询新邮件 ... {wait_time}秒")
-                time.sleep(2)
+                time.sleep(1)
         else:
             return False
 
     def get_email_code(self) -> str:
+        start_text = "Your one-time code is:"
+        end_text = "This code expires in"
+
+        window = gw.getActiveWindow()
+
+        search_region = (
+            max(0, window.left),
+            max(0, window.top),
+            window.width,
+            window.height
+        )
+
+        self.highlight_html_text(start_text)
+        start_position = WindowTools.loop_find_img_position(search_region, *CursorConstants.CHROME_TEXT_EMAIL_CONTENT_START) 
+
+        self.highlight_html_text(end_text)
+        end_position = WindowTools.loop_find_img_position(search_region, *CursorConstants.CHROME_TEXT_EMAIL_CONTENT_END) 
+
+        if(not start_position or not end_position):
+            Logger.error("邮件内容获取失败")
+            raise Exception("邮件内容获取失败")
+
+        from_x = start_position.left - 10
+        from_y = start_position.top - 10
+        
+        to_x = end_position.left + 110
+        to_y = end_position.top + 30
+
+        WindowTools.mouse_select_text(from_x, from_y, to_x, to_y)
+        
+        time.sleep(0.2)
+
+        # ctrl + c 复制
+        pyautogui.hotkey('ctrl', 'c')
+        time.sleep(0.5)
+
+        # 获取剪贴板内容    
+        email_content = pyperclip.paste()
+
+        Logger.info(f"邮件内容: {email_content}")
+
+        # 截取字符串
+
+        start_index = email_content.find(start_text) + len(start_text)
+        end_index = email_content.find(end_text)
+        code = email_content[start_index:end_index].strip()
+        code = code.strip()
+        Logger.info(f"验证码: {code}")
+        return code
+
+
+    def get_email_code_old(self) -> str:
         """
         获取邮件内容
         """
@@ -362,15 +417,12 @@ class ChromeOperator:
         if(not receive_email_result):
             Logger.warn("收信失败")
             raise Exception("收信失败")
+        
+        time.sleep(1)
 
+        self.highlight_html_text("全部设为已读")
 
-        # 点击ctrl + f 输入框
-        pyautogui.hotkey('ctrl', 'f')
         time.sleep(0.5)
-
-        WindowTools.paste_text("全部设为已读")
-        time.sleep(0.5)
-
         clickResult = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_ALL_READ)
 
         if(not clickResult):
@@ -384,13 +436,12 @@ class ChromeOperator:
 
         # 按 ctrl + N 打开新窗口
         pyautogui.hotkey('ctrl', 'n')
-        time.sleep(2)
+        time.sleep(1.5)
         
         self.turn_location(CursorConstants.EMAIL_126_URL)
-        time.sleep(1)
-
+        
         wait_time = 0
-        while wait_time < 20:
+        while wait_time < 25:
 
             self.receive_email()
             time.sleep(1)
@@ -403,7 +454,7 @@ class ChromeOperator:
             else:
                 wait_time += 1
                 Logger.info(f"查询新邮件 ... {wait_time}秒")
-                time.sleep(2)
+                time.sleep(1)
 
         else:
             error_msg = "查询新邮件超时"
@@ -449,7 +500,7 @@ class ChromeOperator:
 
         time.sleep(0.5)
         pyautogui.press('tab')
-        time.sleep(0.3)
+        time.sleep(0.1)
         
         # 输入用户名
         email = EmailConstants.get_email()
@@ -462,15 +513,16 @@ class ChromeOperator:
             messagebox.showerror("错误", error_msg)
             raise Exception("未配置邮箱信息")
         
-        time.sleep(0.5)
+        time.sleep(0.2)
         
         # 按回车键提交表单
         pyautogui.press('enter')
-        time.sleep(3)  # 等待登录过程
+        time.sleep(1)  # 等待登录过程
     
         #发送登录验证码
         self.send_login_code()
 
+        time.sleep(0.5)
         # 登录邮箱内查看
         cursorCode = self.email_login()
 
@@ -501,7 +553,6 @@ class ChromeOperator:
         """判断是否是 Settings 页面"""
         
         currentUrl = self.get_location_url()
-        
         
 
         is_setting_page = currentUrl.startswith(CursorConstants.SURSOR_SETTINGS_URL)
@@ -624,4 +675,22 @@ class ChromeOperator:
             Logger.error(error_msg)
             raise Exception(error_msg)
     
-    
+    def click_cursor_sure_loginin(self):
+        """确认登录 Yes, Login In 按钮"""
+        window = gw.getActiveWindow()
+        
+        # 登出按钮通常在整个窗口范围内
+        search_region = (
+            max(0, window.left),
+            max(0, window.top), 
+            max(0, window.width),
+            max(0, window.height)
+        )
+        
+        result = WindowTools.loop_click_button_once(search_region, *CursorConstants.CHROME_BTN_LOGIN_SURE)
+
+        if not result:
+            Logger.error("无法点击确认登录按钮")
+            raise Exception("无法点击确认登录按钮")
+
+

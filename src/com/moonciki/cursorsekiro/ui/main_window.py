@@ -16,6 +16,7 @@ from com.moonciki.cursorsekiro.cursor.cursor_controller import CursorController
 from com.moonciki.cursorsekiro.utils.window_tools import WindowTools
 from com.moonciki.cursorsekiro.utils.cursor_constants import CursorConstants
 from com.moonciki.cursorsekiro.utils.email_constants import EmailConstants
+from com.moonciki.cursorsekiro.cursor.cursor_reset import CursorReset  # 添加导入
 
 class MainWindow:
     """
@@ -53,8 +54,7 @@ class MainWindow:
         # 加载图标 - 静默处理错误
         try:
             if os.path.exists(CursorConstants.ICON_PATH):
-                icon = tk.PhotoImage(file=CursorConstants.ICON_PATH)
-                self.root.iconphoto(True, icon)
+                self.root.iconbitmap(CursorConstants.ICON_PATH)
         except Exception:
             pass
         
@@ -222,28 +222,28 @@ class MainWindow:
         button_frame = tk.Frame(parent)
         button_frame.pack(pady=5)
         
-        # 检查状态按钮
+        # 重置Cursor按钮
         tk.Button(
             button_frame,
-            text="检查Cursor状态",
-            command=self._check_cursor_status,
+            text="重置Cursor",
+            command=self._reset_cursor,
             font=("Arial", 12)
         ).pack(side=tk.LEFT, padx=5)
         
-        # Evil按钮
+        # 测试按钮
         tk.Button(
             button_frame,
-            text="Evil",
-            command=self._launch_cursor,
+            text="测试",
+            command=self._test_cursor,
             font=("Arial", 12),
             fg="red"
         ).pack(side=tk.LEFT, padx=5)
         
-        # 登出按钮
+        # 关闭Cursor"
         tk.Button(
             button_frame,
-            text="退出Cursor登录",
-            command=self._logout_cursor,
+            text="关闭Cursor",
+            command=self._close_cursor,
             font=("Arial", 12),
             fg="blue"
         ).pack(side=tk.LEFT, padx=5)
@@ -279,42 +279,47 @@ class MainWindow:
         self.log_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
         Logger.info("应用程序启动")
 
-    def _check_cursor_status(self) -> None:
-        """检查Cursor状态"""
-        is_running = self.cursor_controller.is_cursor_running()
-        status_text = "Cursor编辑器正在运行" if is_running else "Cursor编辑器未运行"
-        self.status_label.config(text=status_text)
-        Logger.info(f"检查Cursor状态: {status_text}")
-
-        Logger.info("测试开始");
-    
-        search_region = (
-            0,0,
-            1920,
-            1080
-        )
-
-        WindowTools.capture_region_image(search_region)
-
-        Logger.info(f"clieck_result ")
-
-
-    def _launch_cursor(self) -> None:
-        """启动Cursor"""
-        self.cursor_controller.launch_cursor()
-
-    def _logout_cursor(self) -> None:
-        """退出Cursor登录"""
+    def _reset_cursor(self) -> None:
+        """重置Cursor"""
         try:
-            # 先尝试通过UI点击登出
-            if CursorController.click_cursor_logout():
-                time.sleep(1)  # 等待登出操作完成
+            # 获取自动更新设置
+            disable_update = self.disable_auto_update.get()
             
-            # 无论UI操作是否成功,都执行强制登出
-            #self.cursor_controller.logout_cursor()
+            # 执行重置
+            CursorReset.reset_cursor(disable_update=disable_update)
+            
+            # 更新状态标签
+            Logger.info("Cursor重置成功")
+            messagebox.showinfo("成功", "Cursor重置完成")
             
         except Exception as e:
-            Logger.error(f"登出操作失败: {str(e)}")
+            error_msg = f"重置Cursor失败: {str(e)}"
+            Logger.error(error_msg)
+            messagebox.showerror("错误", error_msg)
+
+    # @@@@@@@@@@@@@
+    def _test_cursor(self) -> None:
+
+        self.task_running = True
+        
+        """启动Cursor"""
+        time.sleep(1)
+        # 退出登录
+        self.close_cursor_process()
+        Logger.info(f"登录状态")
+        
+        self.task_running = False
+
+    def _close_cursor(self) -> None:
+        """关闭Cursor"""
+        try:
+            CursorController.close_cursor()
+            Logger.info("Cursor已关闭")
+            self.status_label.config(text="Cursor已关闭")
+        except Exception as e:
+            error_msg = f"关闭Cursor失败: {str(e)}"
+            Logger.error(error_msg)
+            messagebox.showerror("错误", error_msg)
 
     def _clear_logs(self) -> None:
         """清除日志"""
@@ -445,16 +450,98 @@ class MainWindow:
     def close_cursor_process(self) -> None:
         """关闭Cursor进程"""
         # 退出登录
+        
+        Logger.info("@@@@@@@ 检查登录状态-0 ... ")
         self.open_cursor_setting()
-        time.sleep(0.5)
-        CursorController.click_cursor_logout()
-        time.sleep(0.5)
+        time.sleep(1)
+        Logger.info("@@@@@@@ 检查登录状态 ... ")
+        loginResult = CursorController.check_cursor_login()
+
+        Logger.info("@@@@@@@ 检查登录状态-1 ... ")
+        if(loginResult):
+            Logger.info("退出登录 ... ")
+            
+            Logger.info("@@@@@@@ 检查登录状态-2 ... ")
+            CursorController.click_cursor_logout()
+            time.sleep(0.5)
+
+        Logger.info("@@@@@@@ 检查登录状态-3 ... ")
         self.check_task_status()
         CursorController.focus_cursor_window()
-        time.sleep(0.3)
+        time.sleep(0.5)
+        Logger.info("@@@@@@@ 检查登录状态-4 ... ")
         CursorController.close_cursor()
         time.sleep(1)
+        Logger.info("@@@@@@@ 检查登录状态-5 ... ")
         self.check_task_status()
+
+    
+    
+    def sure_login_cursor(self) -> bool:
+        
+        wait_time = 0
+        while wait_time < 8:
+
+            try:
+                self.chromeOperator.click_cursor_sure_loginin()
+                return True
+            except Exception as e:
+                wait_time += 1
+                Logger.info(f"确认登录失败，重试中 ... {wait_time}秒")
+                time.sleep(1)
+
+        else:
+            error_msg = "确认登录失败 ... "
+            Logger.error(error_msg)
+            return False
+
+
+    def loop_cursor_signin(self):
+
+        wait_time = 0
+        while wait_time < 35:
+            self.open_cursor_setting()
+            
+            Logger.info("尝试点击 sign in按钮...")
+            time.sleep(0.5)
+            manaResult = CursorController.click_cursor_sign()
+
+            Logger.info("正在打开浏览器...")
+            time.sleep(1)
+
+            self.check_task_status()
+            #循环判断是否有chrome
+            self.chromeOperator.check_chrome_open()
+            time.sleep(2)
+
+            self.check_task_status()
+            Logger.info("chrome 浏览器打开完毕...")
+
+            self.chromeOperator.do_cursor_login()
+            time.sleep(0.5)
+            sureResult = self.sure_login_cursor()
+
+            if(sureResult):
+                Logger.info("Cursor 激活成功 ! ")
+                break;
+        
+        else:
+            error_msg = "Cursor 登录失败 ... "
+            Logger.error(error_msg)
+            raise Exception(error_msg)
+
+    def sign_cursor_process(self) -> None:
+        """登录Cursor"""
+        # 检查是否需要启动Cursor
+        CursorController.run_cursor()
+        Logger.info("Cursor已启动")
+
+        self.check_task_status()
+        
+        self.loop_cursor_signin(self);
+        
+
+        
 
     def _execute_cursor_settings(self) -> None:
         """执行Cursor设置相关操作"""
@@ -480,38 +567,30 @@ class MainWindow:
             try:
                 # 删除账号
                 self.delete_cursor_process()
-
+                Logger.info("#### 删除账号成功 ... ")
+                time.sleep(1)
                 # 退出登录
                 self.close_cursor_process()
-
+                Logger.info("#### 关闭Cursor 成功 ... ")
+                time.sleep(1)
                 # 重置 cursor 机器码
-                CursorController.reset_cursor_machine_code()
-
-
-
-
-                # 登录
-                #self.chromeOperator.do_cursor_login()
-                time.sleep(0.5)
-
-                self.check_task_status()
-
+                # 获取自动更新设置
+                disable_update = self.disable_auto_update.get()
+                CursorReset.reset_cursor(disable_update)
+                
+                Logger.info("Cursor重置成功")
+                self.sign_cursor_process()
 
                 Logger.info("操作完成")
                 self.root.after(0, lambda: self.status_label.config(text="操作完成"))
                 
             except Exception as e:
-                Logger.error(f"操作执行出错: {str(e)}")
-                Logger.error(f"错误类型: {type(e)}")
-                if hasattr(e, 'winerror'):
-                    Logger.error(f"Windows错误码: {e.winerror}")
-                if hasattr(e, 'strerror'):
-                    Logger.error(f"错误描述: {e.strerror}")
-                raise
+                Logger.error(f"操作执行出错: ", e)
+                raise e
             
         except Exception as e:
             error_msg = f"设置过程出错: {str(e)}"
-            Logger.error(error_msg)
+            Logger.error(error_msg, e)
             self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
         finally:
             self.task_running = False
