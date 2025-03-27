@@ -1,0 +1,19 @@
+时间: 2025-03-27 19:10:29
+异常类型: NameError
+异常信息: name 'List' is not defined
+详细堆栈:
+  File "f:\all-workspace\cursor-workspace\cursor_sekiro\src\main.py", line 99, in <module>
+    main()
+  File "f:\all-workspace\cursor-workspace\cursor_sekiro\src\main.py", line 89, in main
+    from com.moonciki.cursorsekiro.app import CursorSekiroApp
+  File "f:\all-workspace\cursor-workspace\cursor_sekiro\src\com\moonciki\cursorsekiro\app.py", line 6, in <module>
+    from .ui.main_window import MainWindow
+  File "f:\all-workspace\cursor-workspace\cursor_sekiro\src\com\moonciki\cursorsekiro\ui\main_window.py", line 13, in <module>
+    from com.moonciki.cursorsekiro.cursor.cursor_controller import CursorController
+  File "f:\all-workspace\cursor-workspace\cursor_sekiro\src\com\moonciki\cursorsekiro\cursor\cursor_controller.py", line 13, in <module>
+    class CursorController:
+  File "f:\all-workspace\cursor-workspace\cursor_sekiro\src\com\moonciki\cursorsekiro\cursor\cursor_controller.py", line 255, in CursorController
+    def get_cursor_processes() -> List[psutil.Process]:
+                                  ^^^^
+
+
