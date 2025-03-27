@@ -297,7 +297,7 @@ class MainWindow:
             Logger.error(error_msg)
             messagebox.showerror("错误", error_msg)
 
-    # @@@@@@@@@@@@@
+    # 测试按钮
     def _test_cursor(self) -> None:
 
         self.task_running = True
@@ -451,28 +451,21 @@ class MainWindow:
         """关闭Cursor进程"""
         # 退出登录
         
-        Logger.info("@@@@@@@ 检查登录状态-0 ... ")
         self.open_cursor_setting()
         time.sleep(1)
-        Logger.info("@@@@@@@ 检查登录状态 ... ")
         loginResult = CursorController.check_cursor_login()
 
-        Logger.info("@@@@@@@ 检查登录状态-1 ... ")
         if(loginResult):
             Logger.info("退出登录 ... ")
             
-            Logger.info("@@@@@@@ 检查登录状态-2 ... ")
             CursorController.click_cursor_logout()
             time.sleep(0.5)
 
-        Logger.info("@@@@@@@ 检查登录状态-3 ... ")
         self.check_task_status()
         CursorController.focus_cursor_window()
         time.sleep(0.5)
-        Logger.info("@@@@@@@ 检查登录状态-4 ... ")
         CursorController.close_cursor()
         time.sleep(1)
-        Logger.info("@@@@@@@ 检查登录状态-5 ... ")
         self.check_task_status()
 
     

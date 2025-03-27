@@ -175,20 +175,17 @@ class CursorController:
         time.sleep(0.5)
         # 登出按钮通常在整个窗口范围内
         search_region = (
-            max(0, window.left),
-            max(0, window.top), 
+            0,
+            0, 
             max(0, window.width),
-            max(0, window.height)
+            min(80, window.height)
         )
-        Logger.info("@@@@@@登录找图-1 ... ")
         # 是否有登录按钮
         result_sign = WindowTools.loop_check_img_exist(search_region, *CursorConstants.SIGN_BUTTON_IMAGES)
         time.sleep(0.5)
-        Logger.info("@@@@@@登录找图-2 ... ")
         # 是否有登出按钮
-        result_loginout = WindowTools.loop_check_img_exist(search_region, *CursorConstants.LOGOUT_BUTTON_IMAGES)
+        result_loginout = WindowTools.loop_check_img_exist(search_region, *CursorConstants.MANAGE_BUTTON_IMAGES)
 
-        Logger.info("@@@@@@登录找图-3 ... ")
         if(result_loginout):
             return True
 

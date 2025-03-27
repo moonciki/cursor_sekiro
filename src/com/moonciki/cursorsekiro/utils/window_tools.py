@@ -17,6 +17,8 @@ import win32gui
 import win32process
 import win32con
 import pythoncom
+import numpy as np
+import cv2  # 添加 OpenCV 导入
 
 
 import pygetwindow as gw
@@ -219,39 +221,30 @@ class WindowTools:
             bool: 是否成功点击按钮
         """
         try:
-            button_image_path = os.path.join(CursorConstants.RESOURCES_DIR, button_image_name)
+            # 使用OpenCV查找按钮位置
+            button_location = WindowTools._find_img_position(button_image_name, search_region)
             
-            if not os.path.exists(button_image_path):
-                Logger.error(f"按钮图片不存在: {button_image_path}")
-                return False
+            if button_location:
+                # 获取当前活动窗口
+                window = gw.getActiveWindow()
                 
-            window = gw.getActiveWindow()
+                # 计算按钮中心点
+                button_center_x = button_location.left + button_location.width // 2
+                button_center_y = button_location.top + button_location.height // 2
+                
+                # 确保按钮在当前窗口内
+                if (window.left <= button_center_x <= window.right and 
+                    window.top <= button_center_y <= window.bottom):
+                    # 移动到按钮中心并点击
+                    pyautogui.moveTo(button_center_x, button_center_y)
+                    pyautogui.click()
+                    Logger.info(f"成功点击按钮: {button_image_name}")
+                    return True
+                else:
+                    Logger.warn(f"按钮 {button_image_name} 不在当前窗口内")
             
-            try:
-                button_location = pyautogui.locateOnScreen(
-                    button_image_path,
-                    confidence=0.8,
-                    region=search_region
-                )
-                
-                if button_location:
-                    button_center = pyautogui.center(button_location)
-                    if (window.left <= button_center.x <= window.right and 
-                        window.top <= button_center.y <= window.bottom):
-                        pyautogui.moveTo(button_center.x, button_center.y)
-                        pyautogui.click()
-                        return True
-                
-                return False
-                
-            except Exception as e:
-                import traceback
-                print(f"异常类型: {e.__class__.__name__}")
-                print(f"异常信息: {str(e)}")
-                print("异常堆栈:")
-                print(traceback.format_exc())
-                Logger.warn(f"查找按钮失败: {str(e)}")
-                return False
+            Logger.info(f"未找到按钮: {button_image_name}")
+            return False
             
         except Exception as e:
             Logger.error(f"点击按钮失败: {str(e)}")
@@ -262,8 +255,8 @@ class WindowTools:
     @staticmethod
     def _find_img_position(image_name: str, search_region: Tuple[int, int, int, int]) -> Optional[Box]:
         """
-        在Cursor编辑器中查找指定图片的位置。
-
+        使用OpenCV在屏幕上查找指定图片的位置。
+        
         Args:
             image_name: 图片文件名
             search_region: 搜索区域的坐标 (left, top, width, height)
@@ -278,15 +271,30 @@ class WindowTools:
             raise Exception(f"图片不存在: {button_image_path}")
            
         try:
-            button_location = pyautogui.locateOnScreen(
-                button_image_path,
-                confidence=0.8,
-                region=search_region
-            )
+            # 截取屏幕区域
+            left, top, width, height = search_region
+            screenshot = pyautogui.screenshot(region=search_region)
+            screenshot_np = np.array(screenshot)
             
-            # button_location是Box对象，包含left, top, width, height属性
-            # 可以直接通过button_location.left和button_location.top获取左上角坐标
-            return button_location
+            # 读取模板图像
+            template = cv2.imread(button_image_path)
+            template = cv2.cvtColor(template, cv2.COLOR_BGR2RGB)
+            
+            # 获取模板尺寸
+            h, w = template.shape[:2]
+            
+            # 执行模板匹配
+            result = cv2.matchTemplate(screenshot_np, template, cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+            
+            # 如果匹配度高于阈值
+            if max_val > 0.8:
+                # 转换为屏幕坐标
+                screen_x = left + max_loc[0]
+                screen_y = top + max_loc[1]
+                return Box(left=screen_x, top=screen_y, width=w, height=h)
+            
+            return None
             
         except Exception as e:
             Logger.error(f"查找图片失败: ", e)
