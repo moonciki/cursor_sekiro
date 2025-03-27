@@ -4,80 +4,56 @@ import os
 
 block_cipher = None
 
-# 不排除任何模块，确保所有依赖都被包含
-excluded_modules = []
-
 a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        # 添加资源文件，格式为 (源文件路径, 目标目录)
-        ('resources/', 'resources/') if os.path.exists('resources/') else [],
-        ('src/com/moonciki/cursorsekiro/', 'com/moonciki/cursorsekiro/') if os.path.exists('src/com/moonciki/cursorsekiro/') else [],
-    ],
+    # 不包含resources和config，这些将作为外部目录
+    datas=[],
     hiddenimports=[
         'com.moonciki.cursorsekiro.app',
         'com.moonciki.cursorsekiro.utils',
         'com.moonciki.cursorsekiro.models',
         'com.moonciki.cursorsekiro.controllers',
         'com.moonciki.cursorsekiro.views',
-        'doctest',
-        'pdb',
-        'unittest',
-        'logging',
-        'email',
-        'html',
-        'http',
-        'xml',
-        'xmlrpc',
-        'pydoc',
-        'pyrect',
-        'pygetwindow',
-        'traceback',
-        'time',
         'PIL',
         'PIL._imaging',
         'PIL.Image',
         'pyscreeze',
         'numpy',
-        'matplotlib',
-        'cv2',  # OpenCV可能被用于图像处理
-        'pyautogui',  # 可能被用于自动化操作
-        'keyboard',  # 可能被用于键盘操作
-        'mouse',  # 可能被用于鼠标操作
-        # 添加pkg_resources相关依赖
+        'cv2',
+        'pyautogui',
+        'keyboard',
+        'mouse',
         'pkg_resources',
-        'pkg_resources.py2_warn',
-        'jaraco',
-        'jaraco.text',
-        'jaraco.functools',
-        'jaraco.context',
-        'jaraco.classes',
-        'jaraco.collections',
-        'importlib_metadata',
-        'importlib_resources',
-        'zipp',
-        'more_itertools',
-        'setuptools',
-        'packaging',
-        'packaging.version',
-        'packaging.specifiers',
-        'packaging.requirements',
-        'appdirs',
+        'email',
+        'xml',
+        'xml.etree',
+        'xml.etree.ElementTree',
+        'http',
+        'http.client',
+        'urllib',
+        'urllib.request',
+        'doctest',
+        'pyrect',
+        'pygetwindow',
+        'pdb',
+        'unittest',
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=excluded_modules,
+    # 排除不必要的模块以减小体积，但不排除必要模块
+    excludes=[
+        'matplotlib', 'scipy', 'pandas', 'tkinter.test', 
+        'pydoc',
+        'pytest', '_pytest'
+    ],
     win_no_prefer_redirects=False,
     win_private_assemblies=False,
     cipher=block_cipher,
     noarchive=False,
 )
-
-# 不过滤二进制文件，确保所有必要的DLL都被包含
-# a.binaries = [x for x in a.binaries if not (x[0].startswith('msvcp') and not x[0].endswith('140.dll'))]
 
 pyz = PYZ(
     a.pure, 
@@ -85,32 +61,24 @@ pyz = PYZ(
     cipher=block_cipher
 )
 
-# 只创建目录模式的可执行文件
+# 创建单个exe文件，包含所有依赖
 exe = EXE(
     pyz,
     a.scripts,
-    [],  # 不包含二进制文件在exe中
-    exclude_binaries=True,  # 排除二进制文件，放在外部目录
+    a.binaries,       # 包含二进制文件
+    a.zipfiles,
+    a.datas,
+    [],
     name='CursorSekiro',
-    debug=True,  # 启用调试信息
+    debug=False,
     bootloader_ignore_signals=False,
-    strip=False,  # 不移除调试符号，便于排错
-    upx=False,    # 禁用UPX压缩，避免兼容性问题
+    strip=False,      # 禁用strip，因为Windows上可能没有这个工具
+    upx=True,         # 使用UPX压缩以减小体积
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,  # 保持控制台可见，便于查看错误
+    console=False,    # 隐藏控制台窗口
     icon='resources/images/icon/cursor-sekiro.ico' if os.path.exists('resources/images/icon/cursor-sekiro.ico') else None,
     uac_admin=True,
 )
 
-# 创建包含所有文件的目录
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    strip=False,
-    upx=False,  # 禁用UPX压缩
-    upx_exclude=[],
-    name='CursorSekiro',
-) 
+# 不再使用COLLECT 

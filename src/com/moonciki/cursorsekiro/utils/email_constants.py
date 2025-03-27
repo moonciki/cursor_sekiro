@@ -5,6 +5,7 @@ import os
 import json
 from typing import Dict, Any, Optional
 from com.moonciki.cursorsekiro.logger import Logger
+from com.moonciki.cursorsekiro.utils.cursor_constants import CursorConstants
 
 class EmailConstants:
     """
@@ -12,11 +13,7 @@ class EmailConstants:
     """
     
     # 配置文件路径
-    CONFIG_PATH = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), 
-        "config", 
-        "email_config.json"
-    )
+    CONFIG_PATH = CursorConstants.CONFIG_FILE_PATH
     
     # 默认邮箱域名
     DEFAULT_DOMAIN = "@126.com"

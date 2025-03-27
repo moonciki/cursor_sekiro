@@ -2,14 +2,33 @@
 常量定义模块。
 """
 import os
+import sys
 import pyautogui
 
 class CursorConstants:
     """
     Cursor应用程序常量类。
     """
-    # 获取项目根目录路径
-    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
+    # 获取项目根目录路径（兼容打包环境）
+    @staticmethod
+    def get_project_root():
+        """获取项目根目录，兼容开发环境和打包环境"""
+        if getattr(sys, 'frozen', False):
+            # 如果是打包后的应用程序
+            return os.path.dirname(sys.executable)
+        else:
+            # 如果是开发环境，使用原来的方法
+            return os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))))
+    
+    # 使用静态方法获取项目根目录
+    PROJECT_ROOT = get_project_root.__func__()
+
+    # 配置文件路径
+    CONFIG_FILE_PATH = os.path.join(
+        PROJECT_ROOT, 
+        "config", 
+        "email_config.json"
+    )
 
     # 资源目录路径
     RESOURCES_DIR = os.path.join(PROJECT_ROOT, 'resources', 'images')

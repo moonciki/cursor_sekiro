@@ -367,7 +367,7 @@ class MainWindow:
             
         except Exception as e:
             error_msg = f"登录过程出错: {str(e)}"
-            Logger.error(error_msg)
+            Logger.error(error_msg, e)
             self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
         finally:
             self.task_running = False
@@ -596,7 +596,7 @@ class MainWindow:
     def sign_cursor_process(self):
         """登录Cursor"""
         # 检查是否需要启动Cursor
-        CursorController.run_cursor()
+        CursorController.run_cursor(True)
         Logger.info("Cursor已启动")
 
         self.check_task_status()

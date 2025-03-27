@@ -37,4 +37,5 @@ Thumbs.db
 
 tmp
 
-src/config/*.json
+config/*.json
+out
