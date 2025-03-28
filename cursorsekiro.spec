@@ -98,4 +98,4 @@ exe = EXE(
     uac_admin=True,
 )
 
-# 不再使用COLLECT 
+# 不再使用COLLECT
