@@ -78,24 +78,32 @@ pyz = PYZ(
     cipher=block_cipher
 )
 
-# 创建单个exe文件，包含所有依赖
+# 创建exe文件，但不包含所有依赖
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,       # 包含二进制文件
-    a.zipfiles,
-    a.datas,
-    [],
+    [],  # 不包含二进制文件和数据
+    exclude_binaries=True,  # 排除二进制文件，使用目录方式打包
     name='CursorSekiro',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=False,      # 禁用strip，因为Windows上可能没有这个工具
-    upx=True,         # 使用UPX压缩以减小体积
+    strip=False,
+    upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,    # 隐藏控制台窗口
+    console=False,
     icon='resources/images/icon/cursor-sekiro.ico' if os.path.exists('resources/images/icon/cursor-sekiro.ico') else None,
     uac_admin=True,
 )
 
-# 不再使用COLLECT
+# 使用COLLECT创建目录结构
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='CursorSekiro',
+)

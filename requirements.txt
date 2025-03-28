@@ -1,9 +1,37 @@
-numpy==2.2.4
-opencv_python==4.11.0.86
-opencv_python_headless==4.11.0.86
-psutil==6.1.1
-PyAutoGUI==0.9.54
-PyGetWindow==0.0.9
-pyperclip==1.9.0
-PyScreeze==1.0.1
-pywin32==308
+# -*- coding: utf-8 -*-
+
+# GUI自动化
+pyautogui==0.9.54
+opencv-python>=4.8.0
+pywin32>=305
+pyperclip>=1.8.2
+pygetwindow==0.0.9
+
+# 系统进程管理
+psutil>=5.9.0
+
+# 图像处理
+numpy>=1.24.0
+pillow>=10.0.0
+
+# 屏幕操作
+pyscreeze==0.1.29
+mouseinfo==0.1.3
+pyrect==0.2.0
+pymsgbox==1.0.9
+
+# 基础依赖
+typing-extensions>=4.7.1
+python-dateutil==2.8.2
+
+# 打包工具
+pyinstaller>=5.13.0
+
+# 其他可能用到的基础包
+pillow==10.0.0
+mouseinfo==0.1.3
+pygetwindow==0.0.9
+pymsgbox==1.0.9
+pyrect==0.2.0
+pyscreeze==0.1.29 
+

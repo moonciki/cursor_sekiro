@@ -29,8 +29,9 @@ def run_pyinstaller():
         # 执行PyInstaller命令
         subprocess.call(pyinstaller_cmd)
 
-        if os.path.exists('dist/CursorSekiro.exe'):
-            print("\n打包完成！可执行文件位于 dist/CursorSekiro.exe")
+        # 检查目录是否存在
+        if os.path.exists('dist/CursorSekiro'):
+            print("\n打包完成！可执行文件位于 dist/CursorSekiro/CursorSekiro.exe")
             
             # 复制resources和config目录到dist目录
             copy_external_directories()
@@ -43,7 +44,7 @@ def copy_external_directories():
     """复制resources和config目录到dist目录"""
     # 复制resources目录
     if os.path.exists('resources'):
-        resources_target = os.path.join('dist', 'resources')
+        resources_target = os.path.join('dist', 'CursorSekiro', 'resources')
         if os.path.exists(resources_target):
             shutil.rmtree(resources_target)
         shutil.copytree('resources', resources_target)
@@ -51,7 +52,7 @@ def copy_external_directories():
     
     # 复制config目录（如果存在）
     if os.path.exists('config'):
-        config_target = os.path.join('dist', 'config')
+        config_target = os.path.join('dist', 'CursorSekiro', 'config')
         if os.path.exists(config_target):
             shutil.rmtree(config_target)
         shutil.copytree('config', config_target)
