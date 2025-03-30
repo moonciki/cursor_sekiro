@@ -67,26 +67,6 @@ python main.py
 
 ![cursor-active](./doc/help/cursor-active.png)
 
-
-## 联系方式
-
-<div align="center">
-<table>
-<tr>
-<td align="center">
-<b>公众号</b><br>
-<img src="./doc/help/img/gongzhonghao.png" width="500" alt="微信公众号"><br>
-<small>获取更多资源</small>
-</td>
-<td align="center">
-<b>B站地址</b><br>
-<a href="https://b23.tv/rJRHSmG">https://b23.tv/rJRHSmG</a>
-<small>三连也可以~</small>
-</td>
-</tr>
-</table>
-</div>
-
 #### 打赏
 * 您的支持就是我的动力，如果觉得本工具对你有帮助，可以三连或打赏支持一下（不支持也没关系）
 <div align="center">
@@ -108,6 +88,24 @@ python main.py
 </table>
 </div>
 
+## 联系方式
+
+<div align="center">
+<table>
+<tr>
+<td align="center">
+<b>公众号</b><br>
+<img src="./doc/help/img/gongzhonghao.png" width="500" alt="微信公众号"><br>
+<small>获取更多资源</small>
+</td>
+<td align="center">
+<b>B站地址</b><br>
+<a href="https://b23.tv/rJRHSmG">https://b23.tv/rJRHSmG</a>
+<small>三连也可以~</small>
+</td>
+</tr>
+</table>
+</div>
 
 
 ## 操作过程中请勿移动鼠标或操作键盘
