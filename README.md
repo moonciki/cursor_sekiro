@@ -14,7 +14,7 @@
 
 ## Cursor 历史版本
 #### 如果激活不成功，尝试使用历史版本
-[Cursor 历史版本](./doc/help/md/cursor_history_version.md)
+[Cursor 历史版本](doc/help/md/cursor_history_version.md)
 
 ## 前置条件
 - 本工具只支持windows 系统，其他系统未做测试
@@ -49,26 +49,26 @@ python main.py
 1. 目前只支持主题：现代浅色 default light Modern，所以需要先将cursor设置为该主题
 2. 使用默认浏览器，必须是chrome，登录 126 邮箱，并勾选30天免登录，该邮箱后续作为登录邮箱
 
-![email-login](./doc/help/email-login.png)
+![email-login](doc/help/email-login.png)
 
 3. 以管理员方式运行本工具
 
 4. 先保存邮箱配置。
 
 
-![email-save](./doc/help/email-save.png)
+![email-save](doc/help/email-save.png)
 
 5. 如需单独登录账号，点击登录cursor
 
-![cursor-login](./doc/help/cursor-login.png)
+![cursor-login](doc/help/cursor-login.png)
 
 6. 如需单独重置机器码，点击重置Cursor（该步骤不限制邮箱及浏览器类型）
 
-![cursor-reset](./doc/help/cursor-reset.png)
+![cursor-reset](doc/help/cursor-reset.png)
 
 7. 一键激活
 
-![cursor-active](./doc/help/cursor-active.png)
+![cursor-active](doc/help/cursor-active.png)
 
 #### 打赏
 * 您的支持就是我的动力，如果觉得本工具对你有帮助，可以三连或打赏支持一下（不支持也没关系）
@@ -78,12 +78,12 @@ python main.py
 
 <td align="center">
 <b>微信赞赏</b><br>
-<img src="./doc/help/img/wx_zsm.png" width="300" alt="微信赞赏码"><br>
-<small>要到饭咧？啊咧？不给也没事~ 请随意打赏</small>
+<img src="doc/help/img/wx_zsm.png" width="300" alt="微信赞赏码"><br>
+<small>您的支持，就是我的动力，感谢打赏</small>
 </td>
 <td align="center">
 <b>支付宝赞赏</b><br>
-<img src="./doc/help/img/zfb_zsm.png" width="300" alt="支付宝赞赏码"><br>
+<img src="doc/help/img/zfb_zsm.png" width="300" alt="支付宝赞赏码"><br>
 <small>如果觉得有帮助,来包辣条犒劳一下吧~</small>
 </td>
 
@@ -98,7 +98,7 @@ python main.py
 <tr>
 <td align="center">
 <b>公众号</b><br>
-<img src="./doc/help/img/gongzhonghao.png" width="500" alt="微信公众号-曼哈顿阿童木"><br>
+<img src="doc/help/img/gongzhonghao.png" width="500" alt="微信公众号-曼哈顿阿童木"><br>
 <small>获取更多资源</small>
 </td>
 <td align="center">
