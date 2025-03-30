@@ -95,7 +95,7 @@ python main.py
 <tr>
 <td align="center">
 <b>公众号</b><br>
-<img src="./doc/help/img/gongzhonghao.png" width="500" alt="微信公众号"><br>
+<img src="./doc/help/img/gongzhonghao.png" width="500" alt="微信公众号-曼哈顿阿童木"><br>
 <small>获取更多资源</small>
 </td>
 <td align="center">
