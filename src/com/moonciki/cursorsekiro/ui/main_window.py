@@ -112,10 +112,11 @@ class MainWindow:
         )
         prerequisites_text.insert("1.0", 
             "运行前提：\n"
-            "1. 确保系统默认浏览器是 Chrome\n"
-            "2. 确保系统显示无缩放，无变色\n"
-            "3. 本工具目前只支持126邮箱，运行前，请在chrome 中登录，并勾选30 天免登录\n"
-            "4. 微信公众号：曼哈顿阿童木\n"
+            "1. 运行之前，请确保所有文件已保存\n"
+            "2. 确保系统默认浏览器是 Chrome\n"
+            "3. 确保系统显示无缩放，无变色\n"
+            "4. 本工具目前只支持126邮箱，运行前，请在chrome 中登录，并勾选30 天免登录\n"
+            "5. 微信公众号：曼哈顿阿童木\n"
         )
         prerequisites_text.configure(state="disabled")  # 设为只读，但仍可选择
         prerequisites_text.pack(pady=10)
@@ -411,10 +412,10 @@ class MainWindow:
         screen_height = self.root.winfo_screenheight()
         
         # 设置窗口位置和大小
-        window_width = 420  # 减小宽度
-        window_height = 50  # 减小高度
+        window_width = 440  # 减小宽度
+        window_height = 65  # 减小高度
         x = (screen_width - window_width) // 2
-        y = screen_height - window_height - 45  # 距离底部像素
+        y = screen_height - window_height - 50  # 距离底部像素
         self.warning_window.geometry(f'{window_width}x{window_height}+{x}+{y}')
         
         # 创建一个Frame作为背景
@@ -426,7 +427,7 @@ class MainWindow:
         # 添加警告文本
         Label(
             bg_frame,
-            text="请勿操作电脑，喝杯茶休息一下，马上就好☕ \n(按Ctrl+Q中断操作) ",
+            text="请确保所有文件已保存！\n请勿操作电脑，喝杯茶休息一下，马上就好☕ \n(按Ctrl+Q中断操作) ",
             fg='#FF0000',  # 鲜艳的红色
             font=('Arial', 14, 'bold')
         ).pack(fill='both', expand=True, padx=5)  # 添加一些内边距
@@ -636,7 +637,7 @@ class MainWindow:
                 return
             
             # 确认是否继续
-            if not messagebox.askyesno("确认", "即将开始操作，过程中请勿操作电脑。\n按Ctrl+Q可以随时中断操作。\n是否继续？"):
+            if not messagebox.askyesno("确认", "即将开始操作，请确保所有文件已保存！激活过程中请勿操作电脑。\n按Ctrl+Q可以随时中断操作。\n是否继续？"):
                 return
                 
             Logger.info("开始打开Cursor设置流程")
