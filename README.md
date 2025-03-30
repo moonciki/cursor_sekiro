@@ -9,6 +9,9 @@
 - github
     https://github.com/moonciki/cursor_sekiro
 
+## 百度网盘
+- 链接: https://pan.baidu.com/s/11vp4OoSFhJlJzsl6PgyDmQ?pwd=6666 提取码: 6666 
+
 ## Cursor 历史版本
 #### 如果激活不成功，尝试使用历史版本
 [Cursor 历史版本](./doc/help/md/cursor_history_version.md)

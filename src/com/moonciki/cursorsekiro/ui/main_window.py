@@ -98,20 +98,27 @@ class MainWindow:
         # 创建邮箱设置区域
         self._create_email_settings(top_frame)
         
-        # 添加运行前提提示
-        prerequisites_label = tk.Label(
+        # 添加运行前提提示 - 使用Text控件替代Label以支持文本选择
+        prerequisites_text = tk.Text(
             top_frame,
-            text=(
-                "运行前提：\n"
-                "1. 确保系统默认浏览器是 Chrome\n"
-                "2. 确保系统显示无缩放，无变色\n"
-                "3. 本工具目前只支持126邮箱，运行前，请在chrome 中登录，并勾选30 天免登录"
-            ),
+            height=6,
+            width=200,
             font=("Arial", 10),
-            justify=tk.LEFT,
-            fg="blue"
+            fg="blue",
+            wrap=tk.WORD,
+            borderwidth=0,
+            highlightthickness=0,
+            background=top_frame.cget("background")
         )
-        prerequisites_label.pack(pady=10)
+        prerequisites_text.insert("1.0", 
+            "运行前提：\n"
+            "1. 确保系统默认浏览器是 Chrome\n"
+            "2. 确保系统显示无缩放，无变色\n"
+            "3. 本工具目前只支持126邮箱，运行前，请在chrome 中登录，并勾选30 天免登录\n"
+            "4. 微信公众号：曼哈顿阿童木\n"
+        )
+        prerequisites_text.configure(state="disabled")  # 设为只读，但仍可选择
+        prerequisites_text.pack(pady=10)
         
         # 创建状态标签
         self.status_label = tk.Label(
