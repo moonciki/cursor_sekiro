@@ -36,7 +36,7 @@
 # 安装依赖
 python install_requirements.py
 # 编译
-python setup.py build
+python setup.py
 # 运行
 python main.py
 ```
