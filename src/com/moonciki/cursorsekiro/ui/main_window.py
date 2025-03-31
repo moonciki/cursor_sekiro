@@ -5,7 +5,7 @@ import os
 import threading
 import time
 import tkinter as tk
-from tkinter import scrolledtext, messagebox, Entry, Toplevel, Label
+from tkinter import scrolledtext, messagebox, Entry, Toplevel, Label, filedialog
 
 from com.moonciki.cursorsekiro.cursor.chrome_operator import ChromeOperator
 from com.moonciki.cursorsekiro.cursor.cursor_controller import CursorController
@@ -95,6 +95,9 @@ class MainWindow:
         top_frame = tk.Frame(self.root)
         top_frame.pack(fill=tk.X, padx=10, pady=5)
         
+        # 添加Cursor.exe路径选择框
+        self._create_cursor_exe_selector(top_frame)
+        
         # 创建邮箱设置区域
         self._create_email_settings(top_frame)
         
@@ -116,18 +119,10 @@ class MainWindow:
             "2. 确保系统默认浏览器是 Chrome\n"
             "3. 确保系统显示无缩放，无变色\n"
             "4. 本工具目前只支持126邮箱，运行前，请在chrome 中登录，并勾选30 天免登录\n"
-            "5. 微信公众号：曼哈顿阿童木\n"
+            "5. 及时获取最新工具，关注微信公众号：曼哈顿阿童木"
         )
         prerequisites_text.configure(state="disabled")  # 设为只读，但仍可选择
         prerequisites_text.pack(pady=10)
-        
-        # 创建状态标签
-        self.status_label = tk.Label(
-            top_frame,
-            text="点击按钮检查Cursor状态",
-            font=("Arial", 12)
-        )
-        self.status_label.pack(pady=5)
         
         # 创建按钮Frame和按钮
         self._create_buttons(top_frame)
@@ -247,6 +242,15 @@ class MainWindow:
         button_frame = tk.Frame(parent)
         button_frame.pack(pady=5)
         
+        # 测试按钮 - 移动到最左侧
+        tk.Button(
+            button_frame,
+            text="测试",
+            command=self._test_cursor,
+            font=("Arial", 12),
+            fg="red"
+        ).pack(side=tk.LEFT, padx=5)
+        
         # 登录Cursor按钮
         tk.Button(
             button_frame,
@@ -273,18 +277,20 @@ class MainWindow:
             fg="green"
         ).pack(side=tk.LEFT, padx=5)
         
-        # 创建新的一行用于测试按钮
-        test_frame = tk.Frame(parent)
-        test_frame.pack(pady=2)
+        # 状态标签前缀
+        tk.Label(
+            button_frame,
+            text="运行状态：",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT, padx=(10, 0))
         
-        # 测试按钮
-        tk.Button(
-            test_frame,
-            text="测试",
-            command=self._test_cursor,
-            font=("Arial", 12),
-            fg="red"
-        ).pack(side=tk.LEFT, padx=5)
+        # 状态标签
+        self.status_label = tk.Label(
+            button_frame,
+            text="(未运行)",
+            font=("Arial", 10)
+        )
+        self.status_label.pack(side=tk.LEFT)
 
     def _create_log_area(self) -> None:
         """创建日志区域"""
@@ -365,12 +371,12 @@ class MainWindow:
             self.root.after(0, self._show_warning)
             
             # 更新状态
-            self.root.after(0, lambda: self.status_label.config(text="正在登录Cursor..."))
+            self.root.after(0, lambda: self.status_label.config(text="(正在登录Cursor...)"))
             
             self.sign_cursor_process()
 
             Logger.info("Cursor 登录成功")
-            self.root.after(0, lambda: self.status_label.config(text="Cursor 登录成功"))
+            self.root.after(0, lambda: self.status_label.config(text="(Cursor 登录成功)"))
             self.root.after(0, lambda: messagebox.showinfo("成功", "Cursor 登录成功"))
             
         except Exception as e:
@@ -387,7 +393,7 @@ class MainWindow:
         try:
             CursorController.close_cursor()
             Logger.info("Cursor已关闭")
-            self.status_label.config(text="Cursor已关闭")
+            self.status_label.config(text="(Cursor已关闭)")
         except Exception as e:
             error_msg = f"关闭Cursor失败: {str(e)}"
             Logger.error(error_msg)
@@ -443,7 +449,7 @@ class MainWindow:
         if self.task_running:  # 只在任务运行时响应中断
             self.task_running = False
             Logger.info("操作已中断 (Ctrl+Q)")
-            self.status_label.config(text="操作已中断")
+            self.status_label.config(text="(操作已中断)")
             self._hide_warning()
             # 确保消息框显示在最前面
             self.root.lift()
@@ -630,7 +636,7 @@ class MainWindow:
             self.root.after(0, self._show_warning)
             
             # 更新状态
-            self.root.after(0, lambda: self.status_label.config(text="正在执行操作..."))
+            self.root.after(0, lambda: self.status_label.config(text="(激活中...)"))
             
             if not os.path.exists(CursorConstants.CURSOR_EXE_PATH):
                 Logger.error("未找到Cursor程序，请确认Cursor已正确安装。")
@@ -638,6 +644,7 @@ class MainWindow:
             
             # 确认是否继续
             if not messagebox.askyesno("确认", "即将开始操作，请确保所有文件已保存！激活过程中请勿操作电脑。\n按Ctrl+Q可以随时中断操作。\n是否继续？"):
+                self.root.after(0, lambda: self.status_label.config(text="(未运行)"))
                 return
                 
             Logger.info("开始打开Cursor设置流程")
@@ -662,7 +669,7 @@ class MainWindow:
                 
                 self.sign_cursor_process()
                 Logger.info("操作完成")
-                self.root.after(0, lambda: self.status_label.config(text="操作完成"))
+                self.root.after(0, lambda: self.status_label.config(text="(已完成)"))
                 self.root.after(0, lambda: messagebox.showinfo("成功", "Cursor激活成功"))
                 
             except Exception as e:
@@ -672,6 +679,7 @@ class MainWindow:
         except Exception as e:
             error_msg = f"设置过程出错: {str(e)}"
             Logger.error(error_msg, e)
+            self.root.after(0, lambda: self.status_label.config(text="(未运行)"))
             self.root.after(0, lambda: messagebox.showerror("错误", error_msg))
         finally:
             self.task_running = False
@@ -698,5 +706,71 @@ class MainWindow:
                 self.warning_window.destroy()
         except:
             pass
+        
+    def _create_cursor_exe_selector(self, parent: tk.Frame) -> None:
+        """创建Cursor安装路径选择框"""
+        cursor_frame = tk.Frame(parent)
+        cursor_frame.pack(fill=tk.X, pady=5)
+        
+        # Cursor安装路径标签
+        tk.Label(
+            cursor_frame,
+            text="Cursor安装路径:",
+            font=("Arial", 10)
+        ).pack(side=tk.LEFT, padx=(5, 5))
+        
+        # 获取当前Cursor.exe路径
+        self.cursor_exe_path = EmailConstants.get_cursor_exe_path()
+        
+        # 路径输入框
+        self.cursor_path_var = tk.StringVar(value=self.cursor_exe_path)
+        cursor_path_entry = Entry(
+            cursor_frame,
+            textvariable=self.cursor_path_var,
+            width=50,
+            font=("Arial", 10)
+        )
+        cursor_path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        # 浏览按钮
+        browse_button = tk.Button(
+            cursor_frame,
+            text="浏览",
+            command=self._browse_cursor_exe,
+            font=("Arial", 10)
+        )
+        browse_button.pack(side=tk.LEFT, padx=5)
+
+    def _browse_cursor_exe(self) -> None:
+        """浏览选择Cursor安装路径"""
+        initial_dir = os.path.dirname(self.cursor_path_var.get()) if os.path.exists(os.path.dirname(self.cursor_path_var.get())) else "/"
+        file_path = filedialog.askopenfilename(
+            title="选择Cursor.exe",
+            initialdir=initial_dir,
+            filetypes=[("可执行文件", "*.exe"), ("所有文件", "*.*")]
+        )
+        
+        if file_path:
+            # 检查是否为Cursor.exe
+            if not os.path.basename(file_path).lower() == "cursor.exe":
+                messagebox.showerror("错误", "保存Cursor安装路径失败")
+                return
+            
+            # 设置路径并自动保存
+            self.cursor_path_var.set(file_path)
+            self._auto_save_cursor_exe_path(file_path)
+
+    def _auto_save_cursor_exe_path(self, path: str) -> None:
+        """自动保存Cursor.exe路径"""
+        # 检查文件是否存在
+        if not os.path.exists(path):
+            messagebox.showerror("错误", f"文件不存在: {path}")
+            return
+        
+        # 保存路径
+        if EmailConstants.save_cursor_exe_path(path):
+            self.cursor_exe_path = path
+        else:
+            messagebox.showerror("错误", "保存Cursor安装路径失败")
         
              

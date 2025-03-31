@@ -39,7 +39,7 @@ class EmailConstants:
             return {}
     
     @classmethod
-    def save_config(cls, email_prefix: str, _: str = "", disable_auto_update: bool = True) -> bool:
+    def save_config(cls, email_prefix: str, _: str = "", disable_auto_update: bool = True, cursor_exe_path: str = None) -> bool:
         """
         保存邮箱配置。
         
@@ -47,6 +47,7 @@ class EmailConstants:
             email_prefix: 邮箱前缀
             _: 保留参数，用于兼容性
             disable_auto_update: 是否禁用自动更新
+            cursor_exe_path: Cursor.exe路径，如果为None则不更新此项
             
         Returns:
             保存是否成功
@@ -55,19 +56,25 @@ class EmailConstants:
             # 确保配置目录存在
             os.makedirs(os.path.dirname(cls.CONFIG_PATH), exist_ok=True)
             
-            config = {
-                'email_prefix': email_prefix,
-                'email_suffix': cls.DEFAULT_DOMAIN,
-                'disable_auto_update': disable_auto_update
-            }
+            # 读取现有配置
+            config = cls.get_config()
+            
+            # 更新配置
+            config['email_prefix'] = email_prefix
+            config['email_suffix'] = cls.DEFAULT_DOMAIN
+            config['disable_auto_update'] = disable_auto_update
+            
+            # 如果提供了Cursor.exe路径，则更新
+            if cursor_exe_path is not None:
+                config['cursor_exe_path'] = cursor_exe_path
             
             with open(cls.CONFIG_PATH, 'w', encoding='utf-8') as f:
                 json.dump(config, f, ensure_ascii=False, indent=2)
             
-            Logger.info("邮箱配置已保存")
+            Logger.info("配置已保存")
             return True
         except Exception as e:
-            Logger.error(f"保存邮箱配置失败: {str(e)}")
+            Logger.error(f"保存配置失败: ", e)
             return False
     
     @classmethod
@@ -118,4 +125,45 @@ class EmailConstants:
         Returns:
             是否禁用自动更新，默认为True
         """
-        return cls.get_config().get('disable_auto_update', True) 
+        return cls.get_config().get('disable_auto_update', True)
+    
+    @classmethod
+    def get_cursor_exe_path(cls) -> str:
+        """
+        获取Cursor.exe路径。
+        
+        Returns:
+            Cursor.exe路径，如果未配置则返回默认路径
+        """
+        path = cls.get_config().get('cursor_exe_path')
+        if path and os.path.exists(path):
+            return path
+        return CursorConstants.CURSOR_EXE_PATH
+    
+    @classmethod
+    def save_cursor_exe_path(cls, cursor_exe_path: str) -> bool:
+        """
+        保存Cursor.exe路径。
+        
+        Args:
+            cursor_exe_path: Cursor.exe路径
+            
+        Returns:
+            保存是否成功
+        """
+        try:
+            # 读取现有配置
+            config = cls.get_config()
+            
+            # 更新Cursor.exe路径
+            config['cursor_exe_path'] = cursor_exe_path
+            
+            # 保存配置
+            with open(cls.CONFIG_PATH, 'w', encoding='utf-8') as f:
+                json.dump(config, f, ensure_ascii=False, indent=2)
+            
+            Logger.info(f"Cursor安装路径已保存: {cursor_exe_path}")
+            return True
+        except Exception as e:
+            Logger.error(f"保存Cursor.exe路径失败: {str(e)}")
+            return False 
