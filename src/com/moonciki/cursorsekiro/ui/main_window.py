@@ -244,6 +244,7 @@ class MainWindow:
             email_prefix = self.email_prefix.get().strip()
             email_suffix = self.email_suffix.get().strip()
             email_index = self.email_index_var.get().strip()
+            cursor_path = self.cursor_path_var.get().strip()
             
             # 检查邮箱前缀是否为空
             if not email_prefix:
@@ -263,6 +264,12 @@ class MainWindow:
                 messagebox.showwarning("提示", "请输入邮箱序号")
                 return
                 
+            # 检查Cursor路径是否为空
+            if not cursor_path:
+                self.config_status_label.config(text="(请配置邮箱)", fg="red")
+                messagebox.showwarning("提示", "请选择Cursor安装路径")
+                return
+                
             # 移除邮箱后缀中的 @ 符号（如果存在）
             email_suffix = email_suffix.replace('@', '')
                 
@@ -271,7 +278,7 @@ class MainWindow:
                 email_prefix, 
                 email_suffix,
                 self.disable_auto_update.get(),
-                self.cursor_path_var.get()
+                cursor_path
             )
             
             # 更新UI状态
@@ -724,9 +731,10 @@ class MainWindow:
                 Logger.info(f"当前使用的邮箱地址: {full_email}")
                 
                 # 删除账号
-                self.delete_cursor_process()
-                Logger.info("#### 删除账号成功 ... ")
-                time.sleep(1)
+                # self.delete_cursor_process()
+                # Logger.info("#### 删除账号成功 ... ")
+                # time.sleep(1)
+
                 # 退出登录
                 self.close_cursor_process()
                 Logger.info("#### 关闭Cursor 成功 ... ")
@@ -826,12 +834,11 @@ class MainWindow:
         if file_path:
             # 检查是否为Cursor.exe
             if not os.path.basename(file_path).lower() == "cursor.exe":
-                messagebox.showerror("错误", "保存Cursor安装路径失败")
+                messagebox.showerror("错误", "请选择正确的Cursor.exe文件")
                 return
             
-            # 设置路径并自动保存
+            # 只更新界面显示，不自动保存
             self.cursor_path_var.set(file_path)
-            self._auto_save_cursor_exe_path(file_path)
 
     def _auto_save_cursor_exe_path(self, path: str) -> None:
         """自动保存Cursor.exe路径"""
