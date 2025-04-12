@@ -30,7 +30,7 @@ class CursorController:
             return False
 
     @staticmethod
-    def run_cursor(always : bool = False) -> bool:
+    def run_cursor(always: bool = False, cursor_path: str = None) -> bool:
         """
         查询 Cursor.exe 进程是否存在。
         """
@@ -39,15 +39,17 @@ class CursorController:
             return
 
         Logger.info("#####Cursor未运行，正在启动...")
-        CursorController.launch_cursor()
+        CursorController.launch_cursor(cursor_path)
         time.sleep(0.5)
 
 
     @staticmethod
-    def launch_cursor() -> None:
+    def launch_cursor(cursor_path: str = None) -> None:
         """启动Cursor编辑器。"""
         try:
-            os.startfile(CursorConstants.CURSOR_EXE_PATH)
+            # 使用传入的路径或默认路径
+            exe_path = cursor_path if cursor_path else CursorConstants.CURSOR_EXE_PATH
+            os.startfile(exe_path)
             Logger.info("正在启动Cursor")
             time.sleep(1)
 

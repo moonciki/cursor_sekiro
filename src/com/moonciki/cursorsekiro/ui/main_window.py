@@ -221,11 +221,12 @@ class MainWindow:
                 messagebox.showwarning("提示", "请输入邮箱前缀")
                 return
                 
-            # 保存配置，包含自动更新设置
+            # 保存配置，包含自动更新设置和Cursor路径
             EmailConstants.save_config(
                 email_prefix, 
                 "",
-                self.disable_auto_update.get()
+                self.disable_auto_update.get(),
+                self.cursor_path_var.get()  # 添加Cursor路径
             )
             
             # 更新UI状态
@@ -618,7 +619,8 @@ class MainWindow:
     def sign_cursor_process(self):
         """登录Cursor"""
         # 检查是否需要启动Cursor
-        CursorController.run_cursor(True)
+        cursor_path = self.cursor_path_var.get()
+        CursorController.run_cursor(True, cursor_path)
         Logger.info("Cursor已启动")
 
         self.check_task_status()
@@ -638,7 +640,9 @@ class MainWindow:
             # 更新状态
             self.root.after(0, lambda: self.status_label.config(text="(激活中...)"))
             
-            if not os.path.exists(CursorConstants.CURSOR_EXE_PATH):
+            # 使用用户选择的Cursor路径
+            cursor_path = self.cursor_path_var.get()
+            if not os.path.exists(cursor_path):
                 Logger.error("未找到Cursor程序，请确认Cursor已正确安装。")
                 return
             
