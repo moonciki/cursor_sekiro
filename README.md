@@ -71,7 +71,9 @@ python main.py
 
 ![cursor-reset](doc/help/cursor-reset.png)
 
-7. 一键激活
+8. 一键激活
+
+9. 注意，为了提升效率，最新的 v2.x 版本已经删除了删除账号操作部分，每次直接使用新账号，如需使用老版本，请切回 v1.x 版本。
 
 ![cursor-active](doc/help/cursor-active.png)
 
