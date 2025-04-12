@@ -51,18 +51,23 @@ python main.py
 
 ![email-login](doc/help/email-login.png)
 
-3. 以管理员方式运行本工具
+3. 准备一个域名，并配置 cloudflare DNS 及邮件路由转发
 
-4. 先保存邮箱配置。
+[cloudflare DNS配置及邮件路由转发](doc/help/md/email_route_forward.md)
 
+4. 以管理员方式运行本工具
+
+5. 先保存邮箱配置。
+
+邮箱为你的域名，前缀随便填，序号是自动累加的。
 
 ![email-save](doc/help/email-save.png)
 
-5. 如需单独登录账号，点击登录cursor
+6. 如需单独登录账号，点击登录cursor
 
 ![cursor-login](doc/help/cursor-login.png)
 
-6. 如需单独重置机器码，点击重置Cursor（该步骤不限制邮箱及浏览器类型）
+7. 如需单独重置机器码，点击重置Cursor（该步骤不限制邮箱及浏览器类型）
 
 ![cursor-reset](doc/help/cursor-reset.png)
 
