@@ -147,7 +147,7 @@ class MainWindow:
         )
         disable_update_cb.pack(side=tk.LEFT, padx=(5, 10))
 
-        # 邮箱标签
+        # 邮箱前缀标签
         tk.Label(
             email_frame,
             text="邮箱:",
@@ -163,12 +163,32 @@ class MainWindow:
         )
         email_prefix_entry.pack(side=tk.LEFT)
 
-        # 邮箱后缀
+        # 序号输入框
+        self.email_index_var = tk.StringVar(value="1")
+        email_index_entry = Entry(
+            email_frame,
+            textvariable=self.email_index_var,
+            width=5,
+            font=("Arial", 10)
+        )
+        email_index_entry.pack(side=tk.LEFT)
+
+        # @符号
         tk.Label(
             email_frame,
-            text="@126.com",
+            text="@",
             font=("Arial", 10)
         ).pack(side=tk.LEFT)
+
+        # 邮箱后缀输入框
+        self.email_suffix = tk.StringVar(value=EmailConstants.get_email_suffix())
+        email_suffix_entry = Entry(
+            email_frame,
+            textvariable=self.email_suffix,
+            width=15,
+            font=("Arial", 10)
+        )
+        email_suffix_entry.pack(side=tk.LEFT)
 
         # 保存按钮
         self.save_button = tk.Button(
@@ -204,16 +224,26 @@ class MainWindow:
         """加载邮箱配置"""
         try:
             self.email_prefix.set(EmailConstants.get_email_prefix())
+            self.email_suffix.set(EmailConstants.get_email_suffix())
             self.disable_auto_update.set(EmailConstants.get_disable_auto_update())
+            
+            # 加载序号
+            config = EmailConstants.get_config()
+            email_index = config.get('email_index', 1)
+            self.email_index_var.set(str(email_index))
+            
             if EmailConstants.is_config_saved():
                 Logger.info("邮箱配置已加载")
         except Exception as e:
             Logger.info("首次使用，请配置邮箱")
+            #Logger.error(f"加载配置失败: {str(e)}")
 
     def _save_email_config(self) -> None:
         """保存邮箱配置"""
         try:
             email_prefix = self.email_prefix.get().strip()
+            email_suffix = self.email_suffix.get().strip()
+            email_index = self.email_index_var.get().strip()
             
             # 检查邮箱前缀是否为空
             if not email_prefix:
@@ -221,17 +251,32 @@ class MainWindow:
                 messagebox.showwarning("提示", "请输入邮箱前缀")
                 return
                 
+            # 检查邮箱后缀是否为空
+            if not email_suffix:
+                self.config_status_label.config(text="(请配置邮箱)", fg="red")
+                messagebox.showwarning("提示", "请输入邮箱后缀")
+                return
+                
+            # 检查序号是否为空
+            if not email_index:
+                self.config_status_label.config(text="(请配置邮箱)", fg="red")
+                messagebox.showwarning("提示", "请输入邮箱序号")
+                return
+                
+            # 移除邮箱后缀中的 @ 符号（如果存在）
+            email_suffix = email_suffix.replace('@', '')
+                
             # 保存配置，包含自动更新设置和Cursor路径
             EmailConstants.save_config(
                 email_prefix, 
-                "",
+                email_suffix,
                 self.disable_auto_update.get(),
-                self.cursor_path_var.get()  # 添加Cursor路径
+                self.cursor_path_var.get()
             )
             
             # 更新UI状态
             self.config_status_label.config(text="(邮箱配置已保存)", fg="green")
-            Logger.info(f"邮箱配置已保存: {email_prefix}@126.com")
+            Logger.info(f"邮箱配置已保存: {email_prefix}{email_index}@{email_suffix}")
             messagebox.showinfo("提示", "邮箱配置已保存")
             
         except Exception as e:
@@ -373,6 +418,18 @@ class MainWindow:
             
             # 更新状态
             self.root.after(0, lambda: self.status_label.config(text="(正在登录Cursor...)"))
+            
+            # 增加邮箱序号
+            EmailConstants.increment_email_index()
+            
+            # 更新序号显示
+            config = EmailConstants.get_config()
+            new_index = config.get('email_index', 1)
+            self.email_index_var.set(str(new_index))
+            
+            # 打印完整邮箱地址
+            full_email = EmailConstants.get_email()
+            Logger.info(f"当前使用的邮箱地址: {full_email}")
             
             self.sign_cursor_process()
 
@@ -654,6 +711,18 @@ class MainWindow:
             Logger.info("开始打开Cursor设置流程")
             
             try:
+                # 增加邮箱序号
+                EmailConstants.increment_email_index()
+                
+                # 更新序号显示
+                config = EmailConstants.get_config()
+                new_index = config.get('email_index', 1)
+                self.email_index_var.set(str(new_index))
+                
+                # 打印完整邮箱地址
+                full_email = EmailConstants.get_email()
+                Logger.info(f"当前使用的邮箱地址: {full_email}")
+                
                 # 删除账号
                 self.delete_cursor_process()
                 Logger.info("#### 删除账号成功 ... ")
