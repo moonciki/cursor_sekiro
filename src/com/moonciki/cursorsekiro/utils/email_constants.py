@@ -36,7 +36,7 @@ class EmailConstants:
             return {}
     
     @classmethod
-    def save_config(cls, email_prefix: str, email_suffix: str = "", disable_auto_update: bool = True, cursor_exe_path: str = None) -> bool:
+    def save_config(cls, email_prefix: str, email_suffix: str = "", disable_auto_update: bool = True, cursor_exe_path: str = None, email_index: int = None) -> bool:
         """
         保存邮箱配置。
         
@@ -45,6 +45,7 @@ class EmailConstants:
             email_suffix: 邮箱后缀
             disable_auto_update: 是否禁用自动更新
             cursor_exe_path: Cursor.exe路径，如果为None则不更新此项
+            email_index: 邮箱序号，如果为None则不更新此项
             
         Returns:
             保存是否成功
@@ -64,9 +65,12 @@ class EmailConstants:
             # 如果提供了Cursor.exe路径，则更新
             if cursor_exe_path is not None:
                 config['cursor_exe_path'] = cursor_exe_path
-            
+                
+            # 如果提供了邮箱序号，则更新
+            if email_index is not None:
+                config['email_index'] = int(email_index)
             # 如果配置中没有序号，则初始化为1
-            if 'email_index' not in config:
+            elif 'email_index' not in config:
                 config['email_index'] = 1
             
             with open(cls.CONFIG_PATH, 'w', encoding='utf-8') as f:

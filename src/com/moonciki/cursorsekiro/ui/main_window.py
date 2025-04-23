@@ -38,6 +38,8 @@ class MainWindow:
         # 邮箱相关属性
         self.email_prefix = tk.StringVar()
         self.disable_auto_update = tk.BooleanVar(value=True)
+        self.email_index_var = tk.StringVar(value="1")  # 初始化email_index_var
+        self.email_suffix = tk.StringVar()  # 初始化email_suffix
         
         # 创建日志组件但不立即显示
         self.log_widget = scrolledtext.ScrolledText(
@@ -164,7 +166,6 @@ class MainWindow:
         email_prefix_entry.pack(side=tk.LEFT)
 
         # 序号输入框
-        self.email_index_var = tk.StringVar(value="1")
         email_index_entry = Entry(
             email_frame,
             textvariable=self.email_index_var,
@@ -181,7 +182,6 @@ class MainWindow:
         ).pack(side=tk.LEFT)
 
         # 邮箱后缀输入框
-        self.email_suffix = tk.StringVar(value=EmailConstants.get_email_suffix())
         email_suffix_entry = Entry(
             email_frame,
             textvariable=self.email_suffix,
@@ -235,7 +235,7 @@ class MainWindow:
             if EmailConstants.is_config_saved():
                 Logger.info("邮箱配置已加载")
         except Exception as e:
-            Logger.info("首次使用，请配置邮箱")
+            Logger.error("首次使用，请配置邮箱", e)
             #Logger.error(f"加载配置失败: {str(e)}")
 
     def _save_email_config(self) -> None:
@@ -278,7 +278,8 @@ class MainWindow:
                 email_prefix, 
                 email_suffix,
                 self.disable_auto_update.get(),
-                cursor_path
+                cursor_path,
+                email_index
             )
             
             # 更新UI状态
@@ -541,12 +542,15 @@ class MainWindow:
         self.check_task_status()
         
 
+    def check_cursor_process(self) -> None:
+        # 检查是否需要启动Cursor
+        cursor_path = self.cursor_path_var.get()
+        CursorController.run_cursor(False, cursor_path)
+        Logger.info("Cursor已启动")
 
     def delete_cursor_process(self) -> None:
         """删除Cursor账号"""
-        # 检查是否需要启动Cursor
-        CursorController.run_cursor()
-        Logger.info("Cursor已启动")
+        self.check_cursor_process()
 
         self.check_task_status()
         
@@ -680,18 +684,25 @@ class MainWindow:
             Logger.error(error_msg)
             raise Exception(error_msg)
 
-    def sign_cursor_process(self):
+    def incr_new_email(self) -> None:
+        # 增加邮箱序号
+        EmailConstants.increment_email_index()
+
+        # 更新序号显示
+        config = EmailConstants.get_config()
+        new_index = config.get('email_index', 1)
+        self.email_index_var.set(str(new_index))
+
+    def sign_cursor_process(self) -> None:
         """登录Cursor"""
-        # 检查是否需要启动Cursor
-        cursor_path = self.cursor_path_var.get()
-        CursorController.run_cursor(True, cursor_path)
+        self.check_cursor_process()
+
         Logger.info("Cursor已启动")
 
         self.check_task_status()
         
-        self.loop_cursor_signin();
-        
-        
+        self.loop_cursor_signin()
+        self.incr_new_email()
 
     def _execute_cursor_settings(self) -> None:
         """执行Cursor设置相关操作"""
@@ -718,18 +729,13 @@ class MainWindow:
             Logger.info("开始打开Cursor设置流程")
             
             try:
-                # 增加邮箱序号
-                EmailConstants.increment_email_index()
-                
-                # 更新序号显示
-                config = EmailConstants.get_config()
-                new_index = config.get('email_index', 1)
-                self.email_index_var.set(str(new_index))
-                
+
                 # 打印完整邮箱地址
                 full_email = EmailConstants.get_email()
                 Logger.info(f"当前使用的邮箱地址: {full_email}")
-                
+
+                self.check_cursor_process()
+
                 # 删除账号
                 # self.delete_cursor_process()
                 # Logger.info("#### 删除账号成功 ... ")
